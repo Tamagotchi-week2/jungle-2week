@@ -1,0 +1,70 @@
+# 다마고치 마을
+
+알을 부화·진화시켜 24종 성체 도감을 완성하는 레트로 육성·수집 웹게임.
+
+**설계 문서 [`docs/design.md`](docs/design.md) 가 유일한 기준이다.** 와이어프레임 등 시각 자료는 참고용이며, 명세와 충돌할 경우 항상 문서를 따른다.
+
+## 시작하기
+
+```bash
+npm install
+cp .env.example .env        # DATABASE_URL, AUTH_SECRET 채우기
+npx prisma migrate dev
+npm run dev
+```
+
+## 스크립트
+
+| 명령 | 설명 |
+|---|---|
+| `npm run dev` | 개발 서버 |
+| `npm test` | 진화 엔진 불변식 테스트 |
+| `npm run test:watch` | 테스트 워치 모드 |
+| `npm run lint` | ESLint |
+
+개발·시연 중에는 `.env` 에 `GAME_FAST_MODE=1` 을 넣어 성장 요구치를 25회 → 7회로 낮춘다.
+
+## 구조
+
+```
+docs/design.md            설계 문서 — 모든 판단의 기준
+prisma/schema.prisma      DB 스키마
+src/lib/game/             진화 엔진 (순수 함수, DB·UI 무지)
+src/lib/server/           Prisma 클라이언트 + 서비스 계층
+src/types/api.ts          트랙 간 인터페이스 계약
+src/app/api/              API 라우트
+src/app/(auth)/           로그인·가입
+src/app/(game)/           마을·보상
+src/components/           UI (village / minigame / house / hud / dex / fx / trade / guestbook)
+public/sprites/           스프라이트
+```
+
+## 아키텍처 원칙
+
+문서 16장에서 가져온 것으로, 판단이 필요할 때 여기로 돌아온다.
+
+1. **서버가 상태의 유일한 진실이다.** 모든 난수(알비노 1%, 가챠, 보상 알)는 서버에서만 굴리고 즉시 영속화한다. 행위자는 요청 바디가 아니라 **세션에서 도출**한다.
+2. **규칙은 순수 함수로, UI와 분리한다.** `src/lib/game/` 은 DB도 네트워크도 모른다. 서비스 계층이 상태를 읽어 넘기고 결과를 저장할 뿐이다.
+3. **밸런스 수치는 전부 `src/lib/game/constants.ts` 에 있다.** 코드에 숫자를 흩뿌리지 않는다.
+
+## 구현 시 특히 주의할 것
+
+| 항목 | 문서 |
+|---|---|
+| 단계 전환 시 성향 카운터 리셋 — 누락하면 12종이 도달 불가 | 3장 |
+| 동점 처리는 "동점 그룹 중" 마지막 (`lastFedSeq` 필요) | 3장 |
+| 보상 알 API 2단계 분리 — 합치면 결과가 사전 노출 | 6장 |
+| 교환은 단일 트랜잭션 — 중간 실패 시 개체 복제/증발 | 9장 |
+| 집 화면에 스탯 바를 만들지 않는다 (배고픔·청결 없음) | 17.2 |
+| 방명록은 전역 게시판 — 우편함은 접근 지점일 뿐 | 17.6 |
+
+## 트랙 분담
+
+| | 담당 | 영역 |
+|---|---|---|
+| A | 게임 코어 | 진화 엔진, 펫·알 사이클, 채집 API, 도감, 스키마 |
+| B | 마을 필드 | 타일맵·이동·충돌, 미니게임 3종, 집·HUD |
+| C | 인증 · 소셜 | 로그인 게이트, 교환, 방명록 |
+| D | 아트 · UI | 스프라이트, 도감 UI, 연출 |
+
+브랜치는 `feat/a-core`, `feat/b-village`, `feat/c-social`, `feat/d-art` 로 나누고 `main` 에 PR 로 합친다.

@@ -1,0 +1,250 @@
+// 설계 문서 docs/design.md 10장 기준.
+// 소유자: A (코어). 변경 시 팀에 공유할 것.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum EggType {
+  air
+  land
+  sea
+  gold
+}
+
+enum Trait {
+  a
+  b
+  c
+}
+
+enum Combo {
+  aa
+  ab
+  ac
+  bb
+  bc
+  cc
+}
+
+enum ResourceType {
+  crop // 논  -> 성향 a
+  mineral // 광산 -> 성향 b
+  seafood // 해안가 -> 성향 c
+}
+
+enum GatherKind {
+  mine
+  fish
+}
+
+enum TradeStatus {
+  proposed // 코드 발급, 상대 대기
+  joined // 상대가 코드 입력하고 개체 지정
+  accepted // 완료
+  rejected
+  cancelled // 만료 포함
+}
+
+model User {
+  id           String @id @default(cuid())
+  nickname     String @unique
+  passwordHash String @map("password_hash")
+
+  // 보상 알: 최초 성체 완성 1회 한정 금색 확정 (6장)
+  firstAdultRewardClaimed Boolean @default(false) @map("first_adult_reward_claimed")
+
+  // 진행 중인 보상 알 판정. null 이면 대기 중인 건이 없다.
+  // 이미 존재하는데 open 이 다시 호출되면 재롤하지 않고 이 값을 그대로 쓴다.
+  pendingRewardIsGold Boolean? @map("pending_reward_is_gold")
+
+  tutorialStep Int      @default(0) @map("tutorial_step")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  eggs            UserEgg[]
+  pets            Pet[]
+  inventory       Inventory[]
+  farmPlots       FarmPlot[]
+  gatherSessions  GatherSession[]
+  dexEntries      DexEntry[]
+  guestbookPosts  GuestbookEntry[]
+  tradesInitiated Trade[]          @relation("TradeFrom")
+  tradesReceived  Trade[]          @relation("TradeTo")
+
+  @@map("users")
+}
+
+/// 24행 고정 마스터. 스프라이트 경로는 규칙으로 도출하므로 컬럼을 두지 않는다 (11장).
+model Species {
+  id      Int     @id @default(autoincrement())
+  eggType EggType @map("egg_type")
+  combo   Combo
+  name    String  @unique
+
+  pets       Pet[]
+  dexEntries DexEntry[]
+
+  @@unique([eggType, combo])
+  @@map("species")
+}
+
+model UserEgg {
+  userId  String  @map("user_id")
+  eggType EggType @map("egg_type")
+  count   Int     @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, eggType])
+  @@map("user_eggs")
+}
+
+/// 개체. 도감(DexEntry)과 분리한다 — 교환으로 소유권이 넘어가도 도감 기록은 남는다.
+model Pet {
+  id      String  @id @default(cuid())
+  ownerId String  @map("owner_id")
+  eggType EggType @map("egg_type")
+
+  /// 0 알 / 1 유아기 / 2 성장기 / 3 성체
+  stage    Int     @default(0)
+  isAlbino Boolean @default(false) @map("is_albino")
+
+  // --- 아래 5개는 단계 전환 시 전부 0으로 리셋한다 (3장) ---
+  // 리셋을 빠뜨리면 3차 판정이 25회 누적으로 계산되어 X 와 Y 가 항상 같아지고
+  // ab / ac / bc 계열 12종이 도달 불가능해진다.
+  traitA    Int @default(0) @map("trait_a")
+  traitB    Int @default(0) @map("trait_b")
+  traitC    Int @default(0) @map("trait_c")
+  feedCount Int @default(0) @map("feed_count")
+
+  // 성향별 "마지막으로 먹인 순번". 0 이면 이번 단계에서 먹인 적 없음.
+  // 동점 처리가 "동점 그룹 중 가장 마지막에 먹인 성향"이므로 단일 컬럼으로는 판정할 수 없다.
+  // 예) a=4, b=4, c=2 이고 마지막이 c 인 경우 a·b 중 나중 쪽을 알아야 한다.
+  lastFedSeqA Int @default(0) @map("last_fed_seq_a")
+  lastFedSeqB Int @default(0) @map("last_fed_seq_b")
+  lastFedSeqC Int @default(0) @map("last_fed_seq_c")
+
+  /// 2차에서 확정된 성향 X
+  stage2Trait Trait? @map("stage2_trait")
+
+  /// 3차 확정 시에만 채워진다
+  speciesId Int? @map("species_id")
+
+  /// 개체당 1회 한정 교환 (9장)
+  isTraded Boolean @default(false) @map("is_traded")
+
+  /// 교환 제안에 묶여 있는 동안 다른 교환에 쓰이지 못하게 잠근다
+  lockedByTradeId String? @map("locked_by_trade_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  owner   User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  species Species? @relation(fields: [speciesId], references: [id])
+
+  tradeFrom Trade[] @relation("TradeFromPet")
+  tradeTo   Trade[] @relation("TradeToPet")
+
+  // "동시 육성 1마리" 는 stage < 3 인 개체가 계정당 1마리라는 뜻이다 (6장).
+  // 부분 유니크 인덱스는 Prisma 로 표현할 수 없으므로 서버에서 검증한다.
+  @@index([ownerId, stage])
+  @@map("pets")
+}
+
+model Inventory {
+  userId       String       @map("user_id")
+  resourceType ResourceType @map("resource_type")
+  count        Int          @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, resourceType])
+  @@map("inventory")
+}
+
+/// 밭. FARM_PLOTS = 1 이므로 계정당 1행이다.
+model FarmPlot {
+  id        String    @id @default(cuid())
+  userId    String    @map("user_id")
+  /// 서버 시각. 수확 요청 시 120초 경과를 검증한다 (5장)
+  plantedAt DateTime? @map("planted_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("farm_plots")
+}
+
+/// 광산·어업 세션. 어업은 서버가 정한 입질 시각으로 판정한다 (3.2장).
+model GatherSession {
+  id        String     @id @default(cuid())
+  userId    String     @map("user_id")
+  kind      GatherKind
+  startedAt DateTime   @default(now()) @map("started_at")
+  /// 어업 전용. 캐스팅 시점 기준 입질까지의 지연(ms)
+  biteDelay Int?       @map("bite_delay")
+  resolved  Boolean    @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, resolved])
+  @@map("gather_sessions")
+}
+
+/// 도감 1칸. 완성도는 (hasNormal OR hasAlbino) 기준으로 센다 (8장).
+model DexEntry {
+  userId    String @map("user_id")
+  speciesId Int    @map("species_id")
+
+  hasNormal Boolean @default(false) @map("has_normal")
+  hasAlbino Boolean @default(false) @map("has_albino")
+
+  firstAcquiredAt DateTime @default(now()) @map("first_acquired_at")
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  species Species @relation(fields: [speciesId], references: [id])
+
+  @@id([userId, speciesId])
+  @@map("dex_entries")
+}
+
+model Trade {
+  id        String      @id @default(cuid())
+  /// 6자리. 혼동되는 0/O, 1/I 는 제외한다
+  code      String      @unique
+  expiresAt DateTime    @map("expires_at")
+  status    TradeStatus @default(proposed)
+
+  fromUserId String  @map("from_user_id")
+  fromPetId  String  @map("from_pet_id")
+  toUserId   String? @map("to_user_id")
+  toPetId    String? @map("to_pet_id")
+
+  createdAt  DateTime  @default(now()) @map("created_at")
+  resolvedAt DateTime? @map("resolved_at")
+
+  fromUser User  @relation("TradeFrom", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUser   User? @relation("TradeTo", fields: [toUserId], references: [id])
+  fromPet  Pet   @relation("TradeFromPet", fields: [fromPetId], references: [id])
+  toPet    Pet?  @relation("TradeToPet", fields: [toPetId], references: [id])
+
+  @@index([status, expiresAt])
+  @@map("trades")
+}
+
+/// 전역 게시판. 수신자가 없다 — 우편함은 접근 지점일 뿐이다 (17.6).
+model GuestbookEntry {
+  id           String   @id @default(cuid())
+  authorUserId String   @map("author_user_id")
+  message      String   @db.VarChar(200)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  author User @relation(fields: [authorUserId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt(sort: Desc)])
+  @@map("guestbook_entries")
+}
