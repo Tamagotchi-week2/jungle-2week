@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# 같은 브랜치에 연속 push 시 이전 실행을 취소해 큐가 밀리지 않게 한다
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    env:
+      # 스키마 검증과 타입 생성에만 쓰이는 더미 값.
+      # 실제 DB 에 접속하지 않으므로 시크릿이 필요 없다.
+      DATABASE_URL: postgresql://user:password@localhost:5432/db
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: 의존성 설치
+        run: npm ci
+
+      - name: Prisma 스키마 검증
+        run: npx prisma validate
+
+      - name: Prisma Client 생성
+        run: npx prisma generate
+
+      - name: 타입 체크
+        run: npx tsc --noEmit
+
+      - name: 진화 엔진 불변식 테스트
+        run: npm test
+
+      - name: 린트
+        run: npm run lint
