@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { createTrade, getTradeStatus, resolveTrade, type TradeStatusView } from '@/lib/client/trade';
+import TradeScene from '@/components/village/scenes/TradeScene';
 import type { TradePetView } from '@/types/api';
 
 const POLL_INTERVAL_MS = 3000;
@@ -103,11 +104,13 @@ export function TradeCreatePanel({ pet, onTraded }: TradeCreatePanelProps) {
 
   if (phase === 'waiting') {
     return (
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col items-center gap-3">
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
           상대에게 아래 코드를 알려주세요. 10분간 유효합니다.
         </p>
         <p className="text-3xl font-mono font-bold tracking-widest">{status?.code}</p>
+        {/* B 의 교환 콘솔. 상대 슬롯은 참여 전까지 비어 있다 */}
+        <TradeScene myPet={status?.myPet ?? null} theirPet={null} status="trading" />
         <p className="text-sm text-zinc-500">상대의 참여를 기다리는 중...</p>
       </div>
     );
@@ -115,37 +118,32 @@ export function TradeCreatePanel({ pet, onTraded }: TradeCreatePanelProps) {
 
   if (phase === 'joined' && status?.theirPet) {
     return (
-      <div className="flex flex-col gap-3">
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">상대가 참여했습니다. 최종 확인해 주세요.</p>
-        <div className="flex justify-between gap-4 text-sm">
-          <div>
-            <p className="font-medium">내 개체</p>
-            <p>{status.myPet.speciesName}{status.myPet.isAlbino ? ' (알비노)' : ''}</p>
-          </div>
-          <div>
-            <p className="font-medium">상대 개체</p>
-            <p>{status.theirPet.speciesName}{status.theirPet.isAlbino ? ' (알비노)' : ''}</p>
-          </div>
-        </div>
+      <div className="flex flex-col items-center gap-3">
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+          상대가 참여했습니다. 최종 확인해 주세요.
+        </p>
+        {/* 콘솔의 교환하기/취소를 실제 수락·거절에 연결한다 */}
+        <TradeScene
+          myPet={status.myPet}
+          theirPet={status.theirPet}
+          status={busy ? 'trading' : 'idle'}
+          onConfirm={() => handleResolve(true)}
+          onCancel={() => handleResolve(false)}
+        />
         {error && <p className="text-sm text-red-600">{error}</p>}
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => handleResolve(true)}
-            disabled={busy}
-            className="rounded bg-foreground px-4 py-2 text-background disabled:opacity-50"
-          >
-            수락
-          </button>
-          <button
-            type="button"
-            onClick={() => handleResolve(false)}
-            disabled={busy}
-            className="rounded border border-zinc-400 px-4 py-2 disabled:opacity-50"
-          >
-            거절
-          </button>
-        </div>
+      </div>
+    );
+  }
+
+  if (phase === 'done') {
+    return (
+      <div className="flex flex-col items-center gap-3">
+        <TradeScene
+          myPet={status?.theirPet ?? null}
+          theirPet={status?.myPet ?? null}
+          status="completed"
+        />
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">교환이 완료되었습니다.</p>
       </div>
     );
   }
