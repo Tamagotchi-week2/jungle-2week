@@ -1,7 +1,57 @@
 "use client";
 
 import { logout } from "@/app/(auth)/actions";
+import { eggSprite } from "@/lib/sprites";
+import type { EggType, ResourceType } from "@/lib/game/types";
 import type { VillageScene } from "./types";
+
+/**
+ * 자원·알 아이콘은 실제 스프라이트를 쓴다. 이모지는 OS 마다 그림이 달라
+ * 픽셀 톤과 어긋나고, 집 화면에서 먹이로 보이는 그림과도 달라 같은 자원인지
+ * 알아보기 어렵다.
+ */
+const RESOURCE_ICON: Record<ResourceType, string> = {
+  crop: "/sprites/house/crop.png",
+  mineral: "/sprites/house/mineral.png",
+  seafood: "/sprites/house/seafood.png",
+};
+
+const RESOURCE_LABEL: Record<ResourceType, string> = {
+  crop: "작물",
+  mineral: "광물",
+  seafood: "어패",
+};
+
+const EGG_LABEL: Record<EggType, string> = {
+  air: "공중 알",
+  land: "지상 알",
+  sea: "바다 알",
+  gold: "금색 알",
+};
+
+/** 개수를 곁들인 픽셀 아이콘 한 칸 */
+function Counter({
+  src,
+  label,
+  count,
+}: {
+  src: string;
+  label: string;
+  count: number;
+}) {
+  return (
+    <span className="flex items-center gap-1.5" title={label}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt={label}
+        className="h-5 w-5 object-contain"
+        style={{ imageRendering: "pixelated" }}
+      />
+      <span>{count}</span>
+    </span>
+  );
+}
 
 interface HudProps {
   resources: { crop: number; mineral: number; seafood: number };
@@ -24,9 +74,14 @@ export default function Hud({
           <div className="flex items-center gap-3">
             <span className="text-slate-500 uppercase tracking-[0.25em] text-xs">Resources</span>
             <div className="flex gap-4 font-mono text-slate-100">
-              <span>🌱 {resources.crop}</span>
-              <span>🪨 {resources.mineral}</span>
-              <span>🐟 {resources.seafood}</span>
+              {(["crop", "mineral", "seafood"] as const).map((type) => (
+                <Counter
+                  key={type}
+                  src={RESOURCE_ICON[type]}
+                  label={RESOURCE_LABEL[type]}
+                  count={resources[type]}
+                />
+              ))}
             </div>
           </div>
 
@@ -35,10 +90,14 @@ export default function Hud({
           <div className="flex items-center gap-3">
             <span className="text-slate-500 uppercase tracking-[0.25em] text-xs">Eggs</span>
             <div className="flex gap-3 font-mono text-xs text-slate-100">
-              <span>⬆️ {eggs.air}</span>
-              <span>⬇️ {eggs.land}</span>
-              <span>🌊 {eggs.sea}</span>
-              <span>⭐ {eggs.gold}</span>
+              {(["air", "land", "sea", "gold"] as const).map((type) => (
+                <Counter
+                  key={type}
+                  src={eggSprite(type)}
+                  label={EGG_LABEL[type]}
+                  count={eggs[type]}
+                />
+              ))}
             </div>
           </div>
         </div>
@@ -68,7 +127,9 @@ export default function Hud({
               href="/reward"
               className="animate-pulse rounded-2xl border border-amber-300 bg-amber-400/20 px-3 py-2 text-sm font-semibold text-amber-100 transition hover:bg-amber-400/30"
             >
-              🥚 보상 알 {unclaimedRewards}
+              {/* 알 그림을 넣지 않는다. 어떤 알이든 그려 넣으면 수령 전에 결과를
+                  암시하게 되어 금색 연출이 무너진다 (설계 6장) */}
+              보상 알 {unclaimedRewards}
             </a>
           ) : null}
           <button

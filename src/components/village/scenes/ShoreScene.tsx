@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useMe } from "../MeContext";
 import { BALANCE } from "@/lib/game/constants";
+import { judgeFish, type FishFailReason } from "@/lib/game/gather";
 import type { FishCastResponse, FishStrikeResponse } from "@/types/api";
 
 const QTE_WINDOW_MS = BALANCE.FISH_QTE_WINDOW_MS;
@@ -83,6 +84,25 @@ export default function ShoreScene() {
     setMessage("Waiting for a bite...");
   }
 
+  /** 판정 결과를 화면 문구로 옮긴다. 로컬 판정과 서버 판정이 같은 표현을 쓴다 */
+  function showVerdict(verdict: {
+    success: boolean;
+    reason?: FishFailReason;
+  }) {
+    if (verdict.success) {
+      setMessage("잡았다!");
+      setFeedback("");
+      return;
+    }
+    if (verdict.reason === "too_early") {
+      setMessage("너무 일찍 챘다...");
+      setFeedback("입질을 기다렸다가 채야 합니다.");
+      return;
+    }
+    setMessage("놓쳤다...");
+    setFeedback("한 발 늦었습니다.");
+  }
+
   async function strike() {
     if (loading || !sessionId || state === "resolving") {
       return;
@@ -94,14 +114,15 @@ export default function ShoreScene() {
         ? 0
         : Math.max(0, Math.round(performance.now() - biteShownAtRef.current));
 
+    // 판정을 로컬에서 끝낸다. 서버 왕복을 기다리면 결과가 늦게 뜨고, 지연이 큰
+    // 순간에는 입력이 씹힌 것처럼 느껴진다. 서버도 같은 규칙으로 다시 판정한다.
+    const verdict = judgeFish(struckDuringWait ? 0 : reactionMs);
+
     setLoading(true);
-    setFeedback("");
-    // 요청 즉시 판정 대기 상태로 옮긴다. casting/bite 로 남겨두면 타이머가 계속 돌아
-    // 응답이 오기 전에 "입질" 이나 "놓침" 으로 상태가 덮어써진다.
+    // 타이머를 멈춘다. casting/bite 로 남겨두면 응답 전에 "입질"이나 "놓침"이
+    // 화면을 덮어쓴다.
     setState("resolving");
-    // 네트워크 왕복(Neon 왕복 포함) 동안 아무 반응이 없으면 입력이 씹힌 것처럼 느껴진다.
-    // 판정은 서버가 하되, 눌렀다는 사실은 즉시 화면에 반영한다.
-    setMessage(struckDuringWait ? "너무 일찍 챘다..." : "챘다!");
+    showVerdict(verdict);
 
     const response = await fetch("/api/gather/fish/strike", {
       method: "POST",
@@ -111,22 +132,23 @@ export default function ShoreScene() {
     const payload = (await response.json()) as FishStrikeResponse;
     setLoading(false);
     setSessionId(null);
+    setState("result");
 
-    if (payload.success) {
-      setState("result");
-      setMessage("Success! Fish caught.");
-      setFeedback(`Gained ${payload.gained} seafood.`);
-      await refresh();
+    if (!response.ok) {
+      setMessage("판정에 실패했다.");
+      setFeedback("서버와 통신하지 못했습니다.");
       return;
     }
 
-    setState("result");
-    setMessage("Bite missed.");
-    setFeedback(
-      payload.reason === "too_early"
-        ? "You struck too early. Wait for the signal."
-        : "You were too late. Try again.",
-    );
+    // 서버가 다른 결론을 냈다면 서버 쪽이 맞다. 자원을 쥔 쪽이 서버다.
+    if (payload.success !== verdict.success) {
+      showVerdict({ success: payload.success, reason: payload.reason });
+    }
+
+    if (payload.success) {
+      setFeedback(`어패류 ${payload.gained}개 획득!`);
+      await refresh();
+    }
   }
 
   useEffect(() => {

@@ -43,3 +43,6 @@ next-env.d.ts
 
 # prisma 생성물 (npx prisma generate 로 재생성)
 /src/generated/
+
+# 에이전트 도구 로컬 설정
+.claude/

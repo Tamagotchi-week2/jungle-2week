@@ -20,6 +20,7 @@ import type {
   MineStartResponse,
 } from '@/types/api';
 import { GameRuleError } from '@/lib/game/errors';
+import { judgeFish, judgeMine } from '@/lib/game/gather';
 
 const RESOURCE_TYPES: readonly ResourceType[] = ['crop', 'mineral', 'seafood'];
 
@@ -144,13 +145,22 @@ export async function startMine(userId: string): Promise<MineStartResponse> {
 /**
  * 연타 완료.
  *
- * 클라이언트가 보고한 연타 수를 그대로 믿되, **최소 소요 시간 하한**을 검증한다.
- * 사람이 낼 수 없는 속도로 완료를 보고하면 거절한다.
+ * 판정은 클라이언트가 로컬에서 이미 내렸다. 서버는 **같은 규칙(judgeMine)에 같은
+ * 값을 넣어** 독립적으로 같은 결론에 도달한 뒤 자원을 지급한다. 클라이언트가
+ * "성공했다"고 주장하는 것을 그대로 받지는 않는다.
+ *
+ * 소요 시간은 클라이언트가 잰 값을 쓴다. 서버 시각으로 재면 mine/start 왕복이
+ * 포함되어 실제보다 길게 잡히고, 그만큼 자동 연타에 관대해진다.
+ *
+ * 대신 **주장한 소요 시간이 세션 수명을 넘지 않는지** 확인한다. 세션은 클라이언트가
+ * 첫 연타를 하기 전에 이미 서버에서 생성되므로 서버 경과가 항상 더 길다. 이보다 긴
+ * 시간을 주장한다면 하한 검사를 통과하려고 값을 부풀린 것이다.
  */
 export async function finishMine(
   userId: string,
   sessionId: string,
   clicks: number,
+  elapsedMs: number,
 ): Promise<MineFinishResponse> {
   return db.$transaction(async (tx) => {
     const session = await tx.gatherSession.findUnique({
@@ -168,15 +178,16 @@ export async function finishMine(
       data: { resolved: true },
     });
 
-    const elapsedMs = Date.now() - session.startedAt.getTime();
-    const minMs = BALANCE.MINE_CLICK_TARGET * BALANCE.MINE_MIN_MS_PER_CLICK;
+    // 세션이 열려 있던 시간. 판정이 아니라 "주장이 가능한 값인가" 확인에만 쓴다.
+    const serverElapsed = Date.now() - session.startedAt.getTime();
+    // 부풀린 주장이면 서버가 본 시간으로 깎아 판정한다.
+    const measured = Math.min(elapsedMs, serverElapsed);
 
-    const enough = clicks >= BALANCE.MINE_CLICK_TARGET;
-    const humanSpeed = elapsedMs >= minMs;
+    const verdict = judgeMine(clicks, measured);
 
-    if (!enough || !humanSpeed) {
+    if (!verdict.success) {
       const resources = await grant(tx, userId, 'mineral', 0);
-      return { success: false, gained: 0, resources };
+      return { success: false, reason: verdict.reason, gained: 0, resources };
     }
 
     return {
@@ -215,9 +226,11 @@ export async function castFish(userId: string): Promise<FishCastResponse> {
 /**
  * 판정.
  *
- * 반응시간은 **클라이언트가 로컬에서 잰다** (입질 표시 → 입력). 서버가 요청 도착
- * 시각으로 재면 왕복 지연이 반응시간에 그대로 더해져, 화면상 제때 눌러도 실패한다.
- * 실제로 700ms 창이 지연 때문에 체감상 훨씬 좁아지는 문제가 있었다.
+ * 측정도 판정도 클라이언트가 로컬에서 끝낸다. 서버는 **같은 규칙(judgeFish)에 같은
+ * 값을 넣어** 독립적으로 같은 결론에 도달한 뒤 자원을 지급한다.
+ *
+ * 서버가 요청 도착 시각으로 반응시간을 재면 왕복 지연이 그대로 더해져, 화면상
+ * 제때 눌러도 실패한다. 700ms 창이 지연만큼 좁아지는 셈이다.
  *
  * 대신 서버는 **그 주장이 물리적으로 가능한 시각에 도착했는지**를 확인한다.
  * 입질 전에 도착했거나, 창을 한참 넘겨 도착한 요청은 반응시간과 무관하게 거절한다.
@@ -262,21 +275,12 @@ export async function strikeFish(
 
     const reaction = arrivalPlausible ? reactionMs : sinceBite;
 
-    // 입질 전에 눌렀거나 사람이 낼 수 없는 반응속도
-    if (reaction < BALANCE.FISH_MIN_HUMAN_MS) {
-      return {
-        success: false,
-        reason: 'too_early' as const,
-        gained: 0,
-        resources: await grant(tx, userId, 'seafood', 0),
-      };
-    }
+    const verdict = judgeFish(reaction);
 
-    // 왕복 지연이 포함되므로 윈도우를 넉넉히 잡아 흡수한다
-    if (reaction > BALANCE.FISH_QTE_WINDOW_MS) {
+    if (!verdict.success) {
       return {
         success: false,
-        reason: 'too_late' as const,
+        reason: verdict.reason,
         gained: 0,
         resources: await grant(tx, userId, 'seafood', 0),
       };
