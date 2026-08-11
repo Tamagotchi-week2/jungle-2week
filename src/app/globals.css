@@ -654,3 +654,22 @@ button {
    틀 밖으로 삐져나간다. 틀 안에서는 내용 높이에 맡긴다. */
 .scene-frame-content .dex-book-bg { min-height: 0; }
 .scene-frame-content .dex-book-shell { min-height: 0; }
+
+/* 알 획득 연출 — 금색 변신 (설계 6장).
+   고른 알을 먼저 보여준 뒤 이 애니메이션과 함께 금색 알로 갈아끼운다. */
+@keyframes egg-reveal-pop {
+  0%   { transform: scale(0.7) rotate(-8deg); opacity: 0; filter: brightness(2.2); }
+  45%  { transform: scale(1.18) rotate(4deg); opacity: 1; filter: brightness(1.6); }
+  70%  { transform: scale(0.96) rotate(-2deg); filter: brightness(1.15); }
+  100% { transform: scale(1) rotate(0deg); filter: brightness(1); }
+}
+.egg-reveal-pop { animation: egg-reveal-pop 0.75s cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
+
+@keyframes egg-reveal-glow {
+  0%   { box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.9), 0 0 46px 18px rgba(251, 191, 36, 0.75); }
+  100% { box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.5), 0 0 26px 8px rgba(251, 191, 36, 0.35); }
+}
+.egg-reveal-gold {
+  border-color: rgba(251, 191, 36, 0.85) !important;
+  animation: egg-reveal-glow 0.9s ease-out both;
+}

@@ -90,6 +90,28 @@ export default function HouseScene() {
   const [rewardChoices, setRewardChoices] = useState<EggType[] | null>(null);
   const [selectedReward, setSelectedReward] = useState<EggType | null>(null);
 
+  /**
+   * 알 획득 연출. 수령 직후 고른 알을 먼저 보여주고, 잠시 뒤 실제로 받은 알로
+   * 바꾼다. 금색 판정이었다면 이 순간 알이 금빛으로 변한다 (설계 6장).
+   */
+  const [rewardReveal, setRewardReveal] = useState<{
+    chosen: EggType;
+    granted: EggType;
+    transformed: boolean;
+  } | null>(null);
+  /** 바뀐 뒤인가. false 면 아직 고른 알을 보여주는 중이다 */
+  const [rewardRevealed, setRewardRevealed] = useState(false);
+  const rewardRevealTimerRef = useRef<number | null>(null);
+
+  useEffect(
+    () => () => {
+      if (rewardRevealTimerRef.current !== null) {
+        window.clearTimeout(rewardRevealTimerRef.current);
+      }
+    },
+    [],
+  );
+
   // 최종 성장 단계에 막 도달했을 때만 짧게 연출한다.
   const [celebrating, setCelebrating] = useState(false);
   const [evolving, setEvolving] = useState(false);
@@ -200,19 +222,36 @@ export default function HouseScene() {
 
   async function claimSelectedReward() {
     if (!selectedReward) return;
+    const chosen = selectedReward;
     const result = await call<RewardClaimResponse>("/api/egg/reward/claim", {
-      chosen: selectedReward,
+      chosen,
     });
-    if (result) {
-      setFeedback(
-        result.transformed
-          ? "알이 금빛으로 변했습니다!"
-          : `${EGG_LABEL[result.granted]} 알을 받았습니다.`,
-      );
-      setSelectedReward(null);
-      setRewardChoices(null);
-      await refresh();
+    if (!result) return;
+
+    // 획득 연출을 띄운다. 처음에는 **고른 알**을 그대로 보여준다 — 금색 판정을
+    // 곧바로 드러내면 "평범하게 고른 알이 금색으로 변한다"는 연출 자체가
+    // 성립하지 않는다 (설계 6장).
+    setRewardReveal({ chosen, granted: result.granted, transformed: result.transformed });
+    setRewardRevealed(false);
+    if (rewardRevealTimerRef.current !== null) {
+      window.clearTimeout(rewardRevealTimerRef.current);
     }
+    rewardRevealTimerRef.current = window.setTimeout(() => {
+      setRewardRevealed(true);
+    }, 900);
+
+    setSelectedReward(null);
+    setRewardChoices(null);
+    await refresh();
+  }
+
+  function closeRewardReveal() {
+    if (rewardRevealTimerRef.current !== null) {
+      window.clearTimeout(rewardRevealTimerRef.current);
+      rewardRevealTimerRef.current = null;
+    }
+    setRewardReveal(null);
+    setRewardRevealed(false);
   }
 
   // ---- 드래그 앤 드롭: 밥 주기 · 알 보상 선택 공용 --------------------
@@ -647,6 +686,53 @@ export default function HouseScene() {
             확인
           </button>
         </div>
+      </Modal>
+
+      {/* 알 획득 연출. 성체 완성 연출과 같은 틀을 쓴다 — 둘 다 "받았다"는 것을
+          알리는 같은 성격의 순간이고, 생김새가 갈리면 오히려 산만하다. */}
+      <Modal open={rewardReveal !== null} onClose={closeRewardReveal}>
+        {rewardReveal ? (
+          <div className="evolution-celebrate">
+            <p className="evolution-celebrate-kicker">알 획득</p>
+            <h2 className="evolution-celebrate-title">
+              {rewardRevealed && rewardReveal.transformed
+                ? "금색 알!"
+                : `${EGG_LABEL[rewardRevealed ? rewardReveal.granted : rewardReveal.chosen]} 알`}
+            </h2>
+            <div
+              className={`evolution-celebrate-portrait ${
+                rewardRevealed && rewardReveal.transformed ? "egg-reveal-gold" : ""
+              }`}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                // key 를 바꿔 <img> 를 갈아끼운다. 같은 엘리먼트에 src 만 바꾸면
+                // 변신 애니메이션이 다시 시작하지 않는다.
+                key={rewardRevealed ? "granted" : "chosen"}
+                src={eggSprite(rewardRevealed ? rewardReveal.granted : rewardReveal.chosen)}
+                alt={EGG_LABEL[rewardRevealed ? rewardReveal.granted : rewardReveal.chosen]}
+                className={rewardRevealed && rewardReveal.transformed ? "egg-reveal-pop" : ""}
+                style={{ imageRendering: "pixelated" }}
+              />
+            </div>
+            <p className="evolution-celebrate-copy">
+              {!rewardRevealed
+                ? "알을 받는 중입니다..."
+                : rewardReveal.transformed
+                  ? "고른 알이 금빛으로 변했습니다! 금색 알은 어떤 성향으로도 자랍니다."
+                  : "집에서 부화시켜 육성을 시작할 수 있습니다."}
+            </p>
+            <button
+              type="button"
+              className="evolution-celebrate-button"
+              onClick={closeRewardReveal}
+              // 변신을 보기 전에 닫아버리면 연출이 통째로 날아간다
+              disabled={!rewardRevealed}
+            >
+              확인
+            </button>
+          </div>
+        ) : null}
       </Modal>
     </div>
   );
