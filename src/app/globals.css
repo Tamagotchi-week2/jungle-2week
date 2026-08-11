@@ -642,7 +642,14 @@ button {
 /* 씬 표시 틀 (SceneFrame.tsx).
    내용은 고정 폭으로 그린 뒤 통째로 축소한다 — 스크롤이 생기지 않는다. */
 .scene-frame { position: absolute; left: 50%; top: 50%; width: 0; height: 0; }
-.scene-frame-content { position: absolute; left: 0; top: 0; transform-origin: center center; }
+.scene-frame-content {
+  position: absolute; left: 0; top: 0;
+  transform-origin: center center;
+  /* 배율은 레이아웃 계산 결과지 연출이 아니다. 어디선가 transition 이 걸리면
+     transform 이 보간 대상이 되어 중간값에 머물고, 씬이 축소되지 않은 채로
+     남는다. 여기서만큼은 확실히 끈다. */
+  transition: none !important;
+}
 
 /* 씬 안에서 뷰포트 단위(100vh)를 쓰면 틀이 아니라 화면 전체를 기준으로 잡아
    틀 밖으로 삐져나간다. 틀 안에서는 내용 높이에 맡긴다. */

@@ -68,9 +68,20 @@ export default function SceneFrame({ children }: { children: React.ReactNode }) 
     observer.observe(el);
     window.addEventListener("resize", measure);
 
+    /**
+     * ResizeObserver 만 믿지 않는다. 콜백이 페인트 직전에 배달되는 규격이라
+     * 창이 화면에 그려지지 않는 환경에서는 한 번도 오지 않는 경우가 있다.
+     * 그러면 씬은 마운트 직후의(내용이 덜 찬) 높이로 배율이 굳어 화면 밖으로
+     * 삐져나간다. 목록·이미지가 들어오는 초반 몇 초만 직접 다시 재서 메운다.
+     */
+    const timers = [50, 150, 400, 800, 1500, 2500].map((delay) =>
+      window.setTimeout(measure, delay),
+    );
+
     return () => {
       observer.disconnect();
       window.removeEventListener("resize", measure);
+      timers.forEach(window.clearTimeout);
     };
   }, [measure]);
 
