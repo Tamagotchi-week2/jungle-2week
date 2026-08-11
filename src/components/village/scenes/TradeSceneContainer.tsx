@@ -248,14 +248,14 @@ export default function TradeSceneContainer({ onClose }: { onClose?: () => void 
   }
 
   return (
-    <div className="mx-auto flex max-w-4xl flex-col gap-5 p-4 text-slate-100">
-      <header className="flex items-center justify-between">
+    <div className="trade-station mx-auto flex max-w-4xl flex-col gap-5 p-4">
+      <header className="trade-station-header flex items-center justify-between">
         <h2 className="text-xl font-semibold">펫 교환소</h2>
         {onClose && (
           <button
             type="button"
             onClick={onClose}
-            className="rounded-2xl border border-slate-600 px-3 py-1 text-sm text-slate-300 hover:border-slate-400"
+            className="trade-station-small-button px-3 py-1 text-sm"
           >
             닫기
           </button>
@@ -263,14 +263,25 @@ export default function TradeSceneContainer({ onClose }: { onClose?: () => void 
       </header>
 
       {pets.length === 0 ? (
-        <p className="rounded-2xl border border-slate-700 bg-slate-900/70 p-5 text-center text-sm text-slate-400">
-          교환할 수 있는 성체가 없습니다. 3차 성체까지 키운 개체만 교환할 수 있고,
-          한 번 교환한 개체는 다시 교환할 수 없습니다.
-        </p>
+        <section className={`trade-station-empty ${phase === "done" ? "trade-station-complete" : ""}`}>
+          <div className="trade-station-empty-leaves" aria-hidden="true">♣</div>
+          <p className="trade-station-empty-kicker">
+            {phase === "done" ? "교환 완료" : "숲속 교환 안내"}
+          </p>
+          <h3>{phase === "done" ? "새로운 친구가 도착했어요!" : "교환할 펫이 없어요"}</h3>
+          <p className="trade-station-empty-copy">
+            {phase === "done"
+              ? notice ?? "두 펫의 교환이 무사히 완료되었습니다."
+              : "3차 성체까지 키운 개체만 교환할 수 있으며, 한 번 교환한 개체는 다시 교환할 수 없습니다."}
+          </p>
+          <div className="trade-station-empty-ground" aria-hidden="true">
+            <span>✦</span><span>♠</span><span>✦</span>
+          </div>
+        </section>
       ) : (
         <>
           {/* 1단계 — 내놓을 개체. 발급이든 참여든 공통으로 쓴다 */}
-          <section className="rounded-2xl border border-slate-700 bg-slate-900/70 p-4">
+          <section className="trade-station-panel p-4">
             <p className="text-xs uppercase tracking-[0.3em] text-slate-500">
               내놓을 개체
             </p>
@@ -281,10 +292,10 @@ export default function TradeSceneContainer({ onClose }: { onClose?: () => void 
                   type="button"
                   disabled={phase !== "idle"}
                   onClick={() => setSelectedId(pet.id)}
-                  className={`rounded-2xl border px-3 py-2 text-sm transition disabled:opacity-50 ${
+                  className={`trade-pet-choice px-3 py-2 text-sm transition disabled:opacity-50 ${
                     pet.id === selectedId
-                      ? "border-amber-300 bg-amber-400/15 text-amber-100"
-                      : "border-slate-600 hover:border-slate-400"
+                      ? "trade-pet-choice-selected"
+                      : ""
                   }`}
                 >
                   {label(pet)}
@@ -295,7 +306,7 @@ export default function TradeSceneContainer({ onClose }: { onClose?: () => void 
 
           {/* 2단계 — 발급과 참여를 나란히. 탭으로 감추지 않는다 */}
           <section className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-2xl border border-slate-700 bg-slate-900/70 p-4">
+            <div className="trade-station-panel p-4">
               <p className="text-sm font-semibold">코드 발급</p>
               <p className="mt-1 text-xs text-slate-400">
                 상대에게 코드를 알려주세요. 10분간 유효합니다.
@@ -309,14 +320,14 @@ export default function TradeSceneContainer({ onClose }: { onClose?: () => void 
                   type="button"
                   onClick={handleCreate}
                   disabled={!canAct}
-                  className="mt-3 w-full rounded-2xl border border-amber-300 bg-amber-400/15 px-4 py-2 text-sm font-semibold text-amber-100 disabled:opacity-40"
+                  className="trade-station-primary mt-3 w-full px-4 py-2 text-sm font-semibold disabled:opacity-40"
                 >
                   {busy ? "처리 중…" : "코드 발급"}
                 </button>
               )}
             </div>
 
-            <div className="rounded-2xl border border-slate-700 bg-slate-900/70 p-4">
+            <div className="trade-station-panel p-4">
               <p className="text-sm font-semibold">코드 입력</p>
               <p className="mt-1 text-xs text-slate-400">
                 받은 6자리 코드를 입력하세요.
@@ -328,13 +339,13 @@ export default function TradeSceneContainer({ onClose }: { onClose?: () => void 
                   maxLength={6}
                   disabled={phase !== "idle"}
                   placeholder="ABC123"
-                  className="w-full rounded-2xl border border-slate-600 bg-slate-950/80 px-3 py-2 text-center font-mono tracking-widest disabled:opacity-50"
+                  className="trade-code-input w-full px-3 py-2 text-center tracking-widest disabled:opacity-50"
                 />
                 <button
                   type="button"
                   onClick={handleJoin}
                   disabled={!canAct || code.trim().length === 0}
-                  className="rounded-2xl border border-slate-500 px-4 py-2 text-sm disabled:opacity-40"
+                  className="trade-station-small-button px-4 py-2 text-sm disabled:opacity-40"
                 >
                   참여
                 </button>
@@ -368,7 +379,7 @@ export default function TradeSceneContainer({ onClose }: { onClose?: () => void 
             <button
               type="button"
               onClick={reset}
-              className="mx-auto rounded-2xl border border-slate-600 px-5 py-2 text-sm hover:border-slate-400"
+              className="trade-station-small-button mx-auto px-5 py-2 text-sm"
             >
               새 교환 시작
             </button>
@@ -376,7 +387,7 @@ export default function TradeSceneContainer({ onClose }: { onClose?: () => void 
         </>
       )}
 
-      {notice && (
+      {notice && phase !== "done" && (
         <p className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-center text-sm text-emerald-200">
           {notice}
         </p>

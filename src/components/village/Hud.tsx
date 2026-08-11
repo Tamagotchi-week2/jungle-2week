@@ -85,11 +85,11 @@ export default function Hud({
   const isFinalStage = !hasActivePet;
 
   return (
-    <div className="shrink-0 z-40 border-b border-slate-700/80 bg-slate-950/95 px-4 py-3 backdrop-blur-md">
+    <div className="village-hud shrink-0 z-40 px-4 py-3">
       <div className="mx-auto flex max-w-none items-center justify-between gap-4">
         <div className="flex items-center gap-6 text-sm text-slate-300">
-          <div className="flex items-center gap-3">
-            <span className="text-slate-500 uppercase tracking-[0.25em] text-xs">Resources</span>
+          <div className="village-resource-card flex items-center gap-3 px-4 py-2">
+            <span className="text-xs tracking-[0.2em]">자원</span>
             <div className="flex gap-4 font-mono text-slate-100">
               {(["crop", "mineral", "seafood"] as const).map((type) => (
                 <Counter
@@ -102,10 +102,8 @@ export default function Hud({
             </div>
           </div>
 
-          <div className="w-px h-6 bg-slate-700/40" />
-
-          <div className="flex items-center gap-3">
-            <span className="text-slate-500 uppercase tracking-[0.25em] text-xs">Eggs</span>
+          <div className="village-resource-card flex items-center gap-3 px-4 py-2">
+            <span className="text-xs tracking-[0.2em]">알</span>
             <div className="flex gap-3 font-mono text-xs text-slate-100">
               {(["air", "land", "sea", "gold"] as const).map((type) => (
                 <Counter
@@ -127,7 +125,7 @@ export default function Hud({
             <button
               type="button"
               onClick={() => setConfirmingLogout(true)}
-              className="rounded-2xl border border-slate-600 bg-slate-900/80 px-3 py-2 text-sm text-slate-300 transition hover:border-red-400 hover:text-red-200"
+              className="village-hud-button rounded-2xl px-3 py-2 text-sm transition"
               title="로그아웃하고 게임을 종료합니다"
             >
               종료
@@ -138,7 +136,7 @@ export default function Hud({
             // 되면 같은 보상 선택이 집(HouseScene) 하단으로 옮겨가므로 여기서는 숨긴다.
             <a
               href="/reward"
-              className="animate-pulse rounded-2xl border border-amber-300 bg-amber-400/20 px-3 py-2 text-sm font-semibold text-amber-100 transition hover:bg-amber-400/30"
+              className="village-hud-button animate-pulse rounded-2xl px-3 py-2 text-sm font-semibold transition"
             >
               {/* 알 그림을 넣지 않는다. 어떤 알이든 그려 넣으면 수령 전에 결과를
                   암시하게 되어 금색 연출이 무너진다 (설계 6장) */}
@@ -147,17 +145,17 @@ export default function Hud({
           ) : null}
           <button
             type="button"
-            className="rounded-lg border border-slate-700/80 bg-slate-900/60 px-3 py-2 text-xs text-slate-200 transition hover:bg-slate-800 hover:border-emerald-300"
+            className="village-hud-button rounded-lg px-3 py-2 text-xs transition"
             onClick={() => onOpenScene("dex")}
           >
-            📚 Dex
+            📚 도감
           </button>
           <button
             type="button"
-            className="rounded-lg border border-slate-700/80 bg-slate-900/60 px-3 py-2 text-xs text-slate-200 transition hover:bg-slate-800 hover:border-sky-300"
+            className="village-hud-button rounded-lg px-3 py-2 text-xs transition"
             onClick={() => onOpenScene("trade")}
           >
-            💱 Trade
+            💱 교환
           </button>
         </div>
       </div>

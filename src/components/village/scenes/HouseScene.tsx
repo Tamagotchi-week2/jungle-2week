@@ -35,20 +35,19 @@ const STAGE_NAME = ["알", "유아기", "성장기", "성체"] as const;
 const FEEDS: {
   type: ResourceType;
   label: string;
-  trait: string;
   ring: string;
   icon: string;
 }[] = [
-  { type: "crop", label: "작물", trait: "a", ring: "hover:border-emerald-300", icon: "/sprites/house/crop.png" },
-  { type: "mineral", label: "광물", trait: "b", ring: "hover:border-amber-300", icon: "/sprites/house/mineral.png" },
-  { type: "seafood", label: "어패", trait: "c", ring: "hover:border-sky-300", icon: "/sprites/house/seafood.png" },
+  { type: "crop", label: "작물", ring: "hover:border-emerald-300", icon: "/sprites/house/crop.png" },
+  { type: "mineral", label: "광물", ring: "hover:border-amber-300", icon: "/sprites/house/mineral.png" },
+  { type: "seafood", label: "어패", ring: "hover:border-sky-300", icon: "/sprites/house/seafood.png" },
 ];
 
 const EGG_LABEL: Record<EggType, string> = {
-  air: "공",
-  land: "육",
-  sea: "해",
-  gold: "금",
+  air: "하늘",
+  land: "대지",
+  sea: "바다",
+  gold: "금색",
 };
 
 /** 화면에 성체를 그리는 데 필요한 최소 정보. activePet(PetView)·adults(TradePetView) 양쪽에서 만들 수 있다 */
@@ -84,6 +83,7 @@ export default function HouseScene() {
   const [dropActive, setDropActive] = useState(false);
   const [touchPoint, setTouchPoint] = useState<{ x: number; y: number } | null>(null);
   const portraitRef = useRef<HTMLDivElement | null>(null);
+  const autoEvolvingPetRef = useRef<string | null>(null);
 
   // 알 보상 선택 상태. choices 는 /open 이 내려준 선택지, selected 는 아직
   // 서버에 보내지 않은 하이라이트된 선택(로컬 저장)이다.
@@ -92,6 +92,7 @@ export default function HouseScene() {
 
   // 최종 성장 단계에 막 도달했을 때만 짧게 연출한다.
   const [celebrating, setCelebrating] = useState(false);
+  const [evolving, setEvolving] = useState(false);
 
   const pet = me?.activePet ?? null;
   const resources = me?.resources ?? { crop: 0, mineral: 0, seafood: 0 };
@@ -179,8 +180,11 @@ export default function HouseScene() {
       resourceType,
     });
     if (result) {
-      await refresh();
-      if (result.canEvolve) setFeedback("진화할 수 있습니다.");
+      if (result.canEvolve) {
+        await evolve(result.pet.id);
+      } else {
+        await refresh();
+      }
     }
   }
 
@@ -307,9 +311,9 @@ export default function HouseScene() {
     }
   }
 
-  async function evolve() {
-    if (!pet) return;
-    const result = await call<EvolveResponse>("/api/pet/evolve", { petId: pet.id });
+  async function evolve(petId: string) {
+    setEvolving(true);
+    const result = await call<EvolveResponse>("/api/pet/evolve", { petId });
     if (result) {
       setFeedback(
         result.pet.speciesName
@@ -330,6 +334,7 @@ export default function HouseScene() {
       }
       await refresh();
     }
+    window.setTimeout(() => setEvolving(false), 900);
   }
 
   /** 지금 카드에 그릴 대상. 육성 중이면 그 개체, 아니면 마지막 성체 */
@@ -348,6 +353,15 @@ export default function HouseScene() {
     pet !== null &&
     pet.feedRequired !== null &&
     pet.feedCount >= pet.feedRequired;
+
+  // 이전 버전에서 이미 조건을 채운 채 남은 개체도 버튼 없이 자동 진화시킨다.
+  useEffect(() => {
+    if (!canEvolve || !pet || autoEvolvingPetRef.current === pet.id) return;
+    autoEvolvingPetRef.current = pet.id;
+    void evolve(pet.id);
+    // evolve 는 현재 pet 스냅샷을 서버에 보내는 일만 하므로 id/조건이 바뀔 때만 실행한다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canEvolve, pet?.id]);
 
   const dragGhostIcon =
     dragPayload?.kind === "feed"
@@ -389,7 +403,16 @@ export default function HouseScene() {
                     onClick={() => hatch(type)}
                     className="rounded-2xl border border-slate-700 bg-slate-950/80 px-4 py-3 text-sm transition hover:border-amber-300 disabled:cursor-not-allowed disabled:opacity-40"
                   >
-                    {EGG_LABEL[type]} 알 · {eggs[type]}
+                    <span className="flex items-center justify-center gap-2">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={eggSprite(type)}
+                        alt={`${EGG_LABEL[type]} 알`}
+                        className="h-9 w-9 object-contain"
+                        style={{ imageRendering: "pixelated" }}
+                      />
+                      <span>{eggs[type]}</span>
+                    </span>
                   </button>
                 ))}
               </div>
@@ -397,58 +420,52 @@ export default function HouseScene() {
           ) : (
             <>
               {pet !== null ? (
-                <div className="grid gap-4 lg:grid-cols-[1fr_auto]">
-                  <div className="rounded-[28px] border border-slate-800/90 bg-slate-900/90 p-5">
-                    <p className="text-xs uppercase tracking-[0.35em] text-slate-500">
-                      Stage · Progress
+                <div>
+                  <div className="house-stage-card p-5">
+                    <p className="house-stage-card-label text-xs tracking-[0.22em]">
+                      성장 단계 · 진행도
                     </p>
                     <p className="mt-3 text-2xl font-semibold text-slate-100">
                       {STAGE_NAME[pet.stage]}
                       {pet.isAlbino ? " · 알비노" : ""}
                     </p>
-                    <p className="mt-2 text-sm text-slate-400">
+                    <p className="house-stage-card-count mt-2 text-sm">
                       {pet.feedRequired === null
                         ? pet.speciesName ?? "완성"
                         : `${pet.feedCount} / ${pet.feedRequired}회`}
                     </p>
-                  </div>
-                  <div className="rounded-[28px] border border-slate-800/90 bg-slate-900/90 p-5">
-                    <p className="text-xs uppercase tracking-[0.35em] text-slate-500">
-                      Trait Counter
-                    </p>
-                    <div className="mt-3 flex flex-wrap gap-3 text-sm font-semibold">
-                      {(["a", "b", "c"] as const).map((t) => (
+                    {pet.feedRequired !== null ? (
+                      <div className="house-stage-progress" aria-hidden="true">
                         <span
-                          key={t}
-                          className="rounded-2xl border border-slate-700/80 bg-slate-950/80 px-3 py-2 text-slate-100"
-                        >
-                          {t} {pet.traits[t]}
-                        </span>
-                      ))}
-                    </div>
+                          style={{
+                            width: `${Math.min(100, (pet.feedCount / pet.feedRequired) * 100)}%`,
+                          }}
+                        />
+                      </div>
+                    ) : null}
                   </div>
                 </div>
               ) : (
-                <div className="rounded-[28px] border border-slate-800/90 bg-slate-900/90 p-5 text-center">
-                  <p className="text-xs uppercase tracking-[0.35em] text-slate-500">
-                    Stage · Progress
+                <div className="house-stage-card p-5 text-center">
+                  <p className="house-stage-card-label text-xs tracking-[0.22em]">
+                    성장 단계 · 진행도
                   </p>
                   <p className="mt-3 text-2xl font-semibold text-slate-100">
                     {STAGE_NAME[FINAL_GROWTH_STAGE]}
                     {lastAdultPet?.isAlbino ? " · 알비노" : ""}
                   </p>
-                  <p className="mt-2 text-sm text-slate-400">{lastAdultPet?.speciesName ?? "완성"}</p>
+                  <p className="house-stage-card-count mt-2 text-sm">{lastAdultPet?.speciesName ?? "완성"}</p>
                 </div>
               )}
 
-              <div className="mx-auto w-full max-w-[420px] overflow-hidden rounded-[34px] border border-amber-400/20 bg-slate-900/90 p-5">
+              <div className={`relative mx-auto w-full max-w-[420px] px-5 py-2 ${evolving ? "house-evolving" : ""}`}>
                 <div
                   ref={portraitRef}
                   onDragOver={handlePortraitDragOver}
                   onDragLeave={handlePortraitDragLeave}
                   onDrop={handlePortraitDrop}
-                  className={`mx-auto grid h-[260px] w-[260px] place-items-center overflow-hidden rounded-[28px] border bg-slate-900 transition ${
-                    dropActive ? "house-portrait-drop-active" : "border-slate-700/80"
+                  className={`house-portrait-frame mx-auto grid h-[260px] w-[260px] place-items-center overflow-hidden bg-slate-900 transition ${
+                    dropActive ? "house-portrait-drop-active" : ""
                   } ${pet === null && lastAdultPet ? "house-portrait-final" : ""}`}
                 >
                   {brokenSprite === spritePath ? (
@@ -470,8 +487,8 @@ export default function HouseScene() {
                 </div>
                 <p className="mt-3 text-center text-xs text-slate-500">
                   {pet !== null
-                    ? canEvolve
-                      ? "먹이는 다 채웠습니다. 진화를 눌러 보세요."
+                    ? evolving
+                      ? "새로운 성장 단계로 진화하고 있습니다!"
                       : "아래 먹이를 개체 위로 드래그해서 놓으면 급여됩니다."
                     : isFinalStage
                       ? "아래 알 보상을 클릭하거나 개체 위로 드래그해서 골라 보세요."
@@ -497,7 +514,7 @@ export default function HouseScene() {
                         dragPayload?.kind === "feed" && dragPayload.type === f.type ? "opacity-35" : ""
                       }`}
                       disabled={busy || resources[f.type] <= 0 || canEvolve}
-                      title={`${f.label} · 성향 ${f.trait} — 개체 위로 드래그하세요`}
+                      title={`${f.label} — 개체 위로 드래그하세요`}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
@@ -508,7 +525,7 @@ export default function HouseScene() {
                         draggable={false}
                       />
                       <span className="mt-1 block text-xs font-semibold">
-                        {f.label} · {f.trait}
+                        {f.label}
                       </span>
                       <span className="absolute bottom-1 right-2 rounded-full bg-slate-950/90 px-1.5 text-[10px] text-slate-200">
                         {resources[f.type]}
@@ -566,24 +583,20 @@ export default function HouseScene() {
                       onClick={() => hatch(type)}
                       className="rounded-2xl border border-slate-700 bg-slate-950/80 px-4 py-3 text-sm transition hover:border-amber-300 disabled:cursor-not-allowed disabled:opacity-40"
                     >
-                      {EGG_LABEL[type]} 알 · {eggs[type]}
+                      <span className="flex items-center justify-center gap-2">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={eggSprite(type)}
+                          alt={`${EGG_LABEL[type]} 알`}
+                          className="h-9 w-9 object-contain"
+                          style={{ imageRendering: "pixelated" }}
+                        />
+                        <span>{eggs[type]}</span>
+                      </span>
                     </button>
                   ))}
                 </div>
               )}
-
-              {pet !== null && canEvolve ? (
-                <div className="text-center">
-                  <button
-                    type="button"
-                    onClick={evolve}
-                    disabled={busy}
-                    className="rounded-2xl border border-amber-300 bg-amber-400/20 px-8 py-3 font-semibold text-amber-100 transition hover:bg-amber-400/30 disabled:opacity-50"
-                  >
-                    진화
-                  </button>
-                </div>
-              ) : null}
 
               {isFinalStage ? (
                 <div className="text-center">

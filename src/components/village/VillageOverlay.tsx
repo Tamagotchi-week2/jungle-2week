@@ -45,7 +45,7 @@ export default function VillageOverlay({ activeScene, onClose }: VillageOverlayP
         className="fixed top-6 right-6 z-50 rounded-2xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-slate-100 transition hover:border-slate-400"
         onClick={onClose}
       >
-        Close (ESC)
+        닫기 (ESC)
       </button>
     </div>
   );

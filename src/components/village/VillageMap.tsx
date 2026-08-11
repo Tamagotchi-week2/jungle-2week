@@ -478,34 +478,34 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
       {/* 힌트는 지도(village-fit) 밖, 화면(village-stage) 기준으로 붙인다.
           지도 안에 두면 화면이 넓을 때 지도가 가운데로 모이면서 힌트도 함께
           안쪽으로 딸려 들어가 왼쪽에 빈 공간이 크게 남는다. */}
-      <div className="absolute bottom-4 left-4 z-10 max-w-[320px] rounded-3xl border border-slate-800/80 bg-slate-950/95 p-4 text-slate-100 shadow-xl shadow-black/20 backdrop-blur-sm">
-        <p className="text-xs uppercase tracking-[0.35em] text-slate-500">Interaction Hint</p>
+      <div className="village-hint-card absolute bottom-4 left-4 z-10 max-w-[320px] p-4">
+        <p className="text-xs tracking-[0.22em]">상호작용 안내</p>
         {targetFacility?.scene === "farm" ? (
           <div className="mt-3 space-y-2">
-            <p className="text-sm text-slate-300">Farm ahead. Press <span className="text-amber-300">SPACE</span>.</p>
+            <p className="text-sm">앞에 농장이 있습니다. <span className="text-amber-200">스페이스바</span>를 누르세요.</p>
             <p className="text-base font-semibold text-slate-100">
               {farmState?.plantedAt
                 ? farmReady
-                  ? "Ready to harvest"
-                  : `Growing (${formatTime(farmRemainingSeconds ?? 0)})`
-                : "Empty field"}
+                  ? "수확할 수 있습니다"
+                  : `성장 중 (${formatTime(farmRemainingSeconds ?? 0)})`
+                : "비어 있는 밭"}
             </p>
             <p className="text-sm text-slate-400">
               {farmState?.plantedAt
                 ? farmReady
-                  ? "Harvest with SPACE"
-                  : "Wait until the crop is ready"
-                : "Plant seeds with SPACE"}
+                  ? "스페이스바를 눌러 수확하세요"
+                  : "작물이 자랄 때까지 기다리세요"
+                : "스페이스바를 눌러 씨앗을 심으세요"}
             </p>
             {farmFeedback ? <p className="text-sm text-emerald-200">{farmFeedback}</p> : null}
           </div>
         ) : targetFacility?.scene === "mine" ? (
           <div className="mt-3 space-y-2">
-            <p className="text-sm text-slate-300">Mine ahead. Press <span className="text-amber-300">SPACE</span>.</p>
+            <p className="text-sm">앞에 광산이 있습니다. <span className="text-amber-200">스페이스바</span>를 누르세요.</p>
             <p className="text-base font-semibold text-slate-100">
               {mineSessionId ? `채굴 ${mineClicks} / ${mineTarget}` : "대기 중"}
             </p>
-            <p className="text-sm text-slate-400">{mineSessionId ? "목표까지 SPACE 를 계속 누르세요." : "SPACE 로 채굴을 시작합니다."}</p>
+            <p className="text-sm">{mineSessionId ? "목표까지 스페이스바를 계속 누르세요." : "스페이스바로 채굴을 시작합니다."}</p>
             {mineFeedback ? (
               <p className={`text-sm ${mineOk ? "text-emerald-200" : "text-red-300"}`}>
                 {mineFeedback}
@@ -513,8 +513,8 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
             ) : null}
           </div>
         ) : (
-          <div className="mt-3 text-sm text-slate-400">
-            Face a facility and press <span className="text-amber-300">SPACE</span> to interact.
+          <div className="mt-3 text-sm">
+            시설을 바라보고 <span className="text-amber-200">스페이스바</span>를 눌러 상호작용하세요.
           </div>
         )}
       </div>

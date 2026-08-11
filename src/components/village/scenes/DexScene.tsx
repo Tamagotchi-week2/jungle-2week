@@ -108,16 +108,17 @@ export default function DexScene() {
             <div className="dex-book-detail">
               <div className="dex-book-detail-heading">
                 <div>
-                  <p className="dex-book-kicker">Selected entry</p>
-                  <h2>{selected ? selected.name : error ?? "Select a species"}</h2>
+                  <p className="dex-book-kicker">선택한 항목</p>
+                  <h2>{selected ? selected.name : error ?? "종을 선택하세요"}</h2>
                 </div>
               </div>
-              <div className="dex-book-portrait-frame">
-                <div className="dex-book-portrait">
-                  <div
-                    className="dex-book-portrait-flip"
-                    style={{ transform: showAlbino ? "rotateY(180deg)" : "rotateY(0deg)" }}
-                  >
+              <div className="dex-book-portrait-wrap">
+                <div className={`dex-book-portrait-frame ${selectedHasAlbino ? "dex-book-portrait-frame-albino" : ""}`}>
+                  <div className="dex-book-portrait">
+                    <div
+                      className="dex-book-portrait-flip"
+                      style={{ transform: showAlbino ? "rotateY(180deg)" : "rotateY(0deg)" }}
+                    >
                     <div className="dex-book-portrait-face">
                       {selected ? (
                         // eslint-disable-next-line @next/next/no-img-element
@@ -128,7 +129,7 @@ export default function DexScene() {
                         />
                       ) : null}
                       {!selected?.hasNormal ? (
-                        <div className="dex-book-portrait-mask">Unknown</div>
+                        <div className="dex-book-portrait-mask">미발견</div>
                       ) : null}
                     </div>
                     <div className="dex-book-portrait-face dex-book-portrait-back">
@@ -136,29 +137,34 @@ export default function DexScene() {
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={adultSprite(selected.eggType, selected.combo, true)}
-                          alt={`${selected.name} Albino`}
+                          alt={`${selected.name} 알비노`}
                           style={{ imageRendering: "pixelated" }}
                         />
                       ) : null}
                       {!selectedHasAlbino ? (
-                        <div className="dex-book-portrait-mask">Albino unavailable</div>
+                        <div className="dex-book-portrait-mask">알비노 미발견</div>
                       ) : null}
+                    </div>
                     </div>
                   </div>
                 </div>
+                {selectedHasAlbino ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowAlbino((current) => !current)}
+                    className={`dex-book-form-switch ${showAlbino ? "dex-book-form-switch-active" : ""}`}
+                    aria-label={showAlbino ? "일반 모습으로 전환" : "알비노 모습으로 전환"}
+                    title={showAlbino ? "일반 모습 보기" : "알비노 모습 보기"}
+                  >
+                    <span aria-hidden="true">↗</span>
+                    <span aria-hidden="true">↙</span>
+                  </button>
+                ) : null}
               </div>
               <div className="dex-book-detail-copy">
                 <p>발견한 종의 기본 모습과 희귀한 알비노 모습을 이 도감에서 확인할 수 있습니다.</p>
                 <p>알비노는 보유 시에만 뒤집어서 확인할 수 있습니다.</p>
               </div>
-              <button
-                type="button"
-                disabled={!selectedHasAlbino}
-                onClick={() => setShowAlbino((current) => !current)}
-                className="dex-book-albino-button"
-              >
-                알비노 보기
-              </button>
             </div>
             <span className="dex-book-page-number">02</span>
           </section>
