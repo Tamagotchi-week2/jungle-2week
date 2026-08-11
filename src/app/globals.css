@@ -87,7 +87,7 @@ button {
   box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03);
 }
 
-.dex-book-bg { min-height: 100vh; padding: clamp(1rem, 4vw, 3rem); color: #372615; background: radial-gradient(ellipse at center, #817051 0 20%, transparent 61%), linear-gradient(120deg, #344030, #182219); }
+.dex-book-bg { min-height: 100vh; padding: clamp(1rem, 4vw, 3rem); color: #372615; background: radial-gradient(ellipse at center, #817051 0 20%, transparent 61%), linear-gradient(120deg, #344030, #182219); font-family: var(--font-pixel), var(--font-geist-sans), sans-serif; }
 .dex-book-shell { position: relative; width: min(100%, 1200px); min-height: min(760px, calc(100vh - 2rem)); margin: auto; display: grid; place-items: center; padding: 1.4rem 1rem 4.25rem; }
 .dex-book-pages { position: relative; z-index: 1; width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) 22px minmax(0, 1fr); filter: drop-shadow(0 26px 17px rgba(0,0,0,.35)); }
 .dex-book-page { position: relative; min-width: 0; padding: clamp(1rem, 2.4vw, 2rem); overflow: hidden; background-color: #f2e6c8; background-image: radial-gradient(ellipse at 25% 12%, rgba(255,255,255,.75), transparent 24%), radial-gradient(circle, rgba(94,67,34,.10) .7px, transparent .9px), linear-gradient(100deg, #e3d1ad, #fbf4df 17%, #f7efd7 86%, #dfcba5); background-size: auto, 13px 13px, auto; border: 2px solid #70502d; box-shadow: inset 0 0 0 3px rgba(255,255,255,.4), inset 0 0 32px rgba(91,62,27,.18); }
@@ -111,6 +111,41 @@ button {
 .dex-book-detail-copy { padding:.8rem .95rem; color:#53391f; font-size:clamp(.75rem,1.5vw,.9rem); line-height:1.7; border-top:1px dashed #a5804c; border-bottom:1px dashed #a5804c; }.dex-book-detail-copy p { margin:0; }.dex-book-detail-copy p + p { margin-top:.35rem; }.dex-book-albino-button { width:100%; margin-top:auto; padding:.7rem 1rem; color:#fff0bf; font-size:.78rem; font-weight:900; letter-spacing:.12em; border:2px solid #523215; background:linear-gradient(#9b6026,#654019); box-shadow:inset 0 0 0 2px rgba(255,225,160,.25), 0 3px 0 #43260f; transition:filter .15s,transform .15s; }.dex-book-albino-button:hover:not(:disabled) { filter:brightness(1.16); transform:translateY(-1px); }.dex-book-albino-button:disabled { color:#9a886d; background:#706653; box-shadow:inset 0 0 0 2px rgba(255,255,255,.15); cursor:not-allowed; }.dex-book-page-number { position:absolute; z-index:1; bottom:.7rem; right:1.1rem; color:#8a653c; font-size:.67rem; font-weight:900; letter-spacing:.14em; }
 @media (max-width: 720px) { .dex-book-bg { padding:.7rem; }.dex-book-shell { min-height:0; padding:.5rem .25rem 2.7rem; }.dex-book-pages { grid-template-columns:1fr; gap:0; }.dex-book-spine { height:16px; margin:-1px 7% -1px; background:linear-gradient(#3d2514,#d0a260 52%,#422713); }.dex-book-page { padding:1rem; }.dex-book-left-page { border-radius:14px 14px 4px 4px; }.dex-book-right-page { border-radius:4px 4px 14px 14px; }.dex-book-cover-detail { height:3rem; bottom:.25rem; }.dex-book-bookmark { right:.75rem; top:1.5rem; }.dex-book-portrait { height:min(58vw,250px); } }
 
+/* House scene: drag-and-drop feeding + final growth stage flourish. */
+.house-portrait-drop-active { border-color:#fbbf24 !important; outline:3px dashed #fbbf24; outline-offset:4px; background-color:rgba(251,191,36,.12) !important; }
+@keyframes house-final-glow { 0%,100% { box-shadow:0 0 0 3px rgba(251,191,36,.35), 0 0 22px 6px rgba(251,191,36,.28); } 50% { box-shadow:0 0 0 3px rgba(251,191,36,.6), 0 0 34px 10px rgba(251,191,36,.48); } }
+.house-portrait-final { border-color:rgba(251,191,36,.55) !important; animation:house-final-glow 2.6s ease-in-out infinite; }
+@keyframes house-sparkle-pop { 0% { opacity:0; transform:scale(.4) rotate(0deg); } 35% { opacity:1; transform:scale(1.15) rotate(20deg); } 100% { opacity:0; transform:scale(1.4) rotate(45deg); } }
+
+/* 공용 모달/오버레이 — alert/confirm/prompt 대체. 배경 클릭·ESC 로 닫힌다 */
+.app-modal-backdrop { position:fixed; inset:0; z-index:1000; display:grid; place-items:center; padding:clamp(1rem,4vw,2.5rem); background:rgba(8,12,20,.72); backdrop-filter:blur(3px); animation:app-modal-fade-in .18s ease-out; }
+.app-modal-card { width:min(92vw,clamp(280px,60vw,560px)); max-height:min(88vh,720px); overflow-y:auto; padding:clamp(1.1rem,3vw,2rem); border-radius:clamp(16px,3vw,28px); background:#0f172a; border:1px solid rgba(148,163,184,.25); box-shadow:0 30px 90px rgba(0,0,0,.5); color:#e2e8f0; animation:app-modal-pop-in .2s ease-out; }
+@keyframes app-modal-fade-in { from { opacity:0; } to { opacity:1; } }
+@keyframes app-modal-pop-in { from { opacity:0; transform:scale(.92) translateY(8px); } to { opacity:1; transform:scale(1) translateY(0); } }
+
+/* 확인/취소형 다이얼로그 — window.confirm 대체 */
+.confirm-dialog { display:grid; gap:clamp(.9rem,2.4vw,1.2rem); text-align:center; }
+.confirm-dialog-message { margin:0; font-size:clamp(.9rem,2.4vw,1.05rem); line-height:1.6; }
+.confirm-dialog-actions { display:grid; grid-template-columns:1fr 1fr; gap:.75rem; }
+.confirm-dialog-cancel,.confirm-dialog-confirm { padding:.65rem 1rem; border-radius:14px; font-size:.85rem; font-weight:700; transition:transform .12s,background-color .12s; }
+.confirm-dialog-cancel { border:1px solid rgba(148,163,184,.4); background:rgba(30,41,59,.7); color:#cbd5e1; }
+.confirm-dialog-cancel:hover { background:rgba(51,65,85,.8); }
+.confirm-dialog-confirm { border:1px solid rgba(248,113,113,.55); background:rgba(248,113,113,.18); color:#fecaca; }
+.confirm-dialog-confirm:hover { background:rgba(248,113,113,.3); transform:translateY(-1px); }
+
+/* 최종 성장 단계 도달 연출 — 모달 안에서 재생된다 */
+.evolution-celebrate { display:grid; justify-items:center; gap:clamp(.5rem,1.5vw,.9rem); text-align:center; }
+.evolution-celebrate-kicker { margin:0; font-size:clamp(.65rem,1.6vw,.8rem); letter-spacing:.3em; text-transform:uppercase; color:#fbbf24; }
+.evolution-celebrate-title { margin:0; font-size:clamp(1.3rem,4vw,2rem); font-weight:800; }
+.evolution-celebrate-portrait { position:relative; width:min(60vw,220px); height:min(60vw,220px); display:grid; place-items:center; border-radius:clamp(18px,3vw,26px); background:#111827; border:2px solid rgba(251,191,36,.5); overflow:hidden; animation:house-final-glow 2.2s ease-in-out infinite; }
+.evolution-celebrate-portrait img { width:100%; height:100%; object-fit:contain; }
+.evolution-celebrate-portrait::before,.evolution-celebrate-portrait::after { content:"✦"; position:absolute; z-index:2; color:#fde68a; text-shadow:0 0 10px rgba(253,230,138,.9); animation:house-sparkle-pop 1.3s ease-out infinite; pointer-events:none; }
+.evolution-celebrate-portrait::before { top:8%; left:10%; font-size:1.5rem; }
+.evolution-celebrate-portrait::after { bottom:10%; right:10%; font-size:1.9rem; animation-delay:.45s; }
+.evolution-celebrate-copy { margin:0; font-size:clamp(.78rem,2vw,.95rem); color:#cbd5e1; }
+.evolution-celebrate-button { margin-top:.4rem; padding:.65rem 1.6rem; border-radius:999px; border:1px solid rgba(251,191,36,.6); background:rgba(251,191,36,.18); color:#fef3c7; font-weight:700; font-size:.85rem; transition:transform .12s,background-color .12s; }
+.evolution-celebrate-button:hover { background:rgba(251,191,36,.28); transform:translateY(-1px); }
+
 /* Trade display: muted field-guide paper, keeping the existing structure intact. */
 .trade-console { overflow:hidden; padding:clamp(.7rem,2.2vw,1.25rem); color:#514837; border:4px solid #655b49; border-radius:5px; background:linear-gradient(135deg,#e7dfc5,#d7cfb5); box-shadow:inset 0 0 0 2px #f4efd9, inset 0 0 0 6px #a69b7e, 0 5px 0 #494235; }
 .trade-console-header { display:flex; align-items:center; justify-content:center; gap:.55rem; margin:0 0 .8rem; color:#514837; font-family:Georgia,"Times New Roman",serif; font-size:clamp(1rem,3vw,1.3rem); font-weight:700; letter-spacing:.14em; text-shadow:1px 1px #f5f0df; }.trade-console-header h1 { margin:0; font:inherit; }.trade-console-header span { color:#7d8663; font-size:.85em; }
@@ -122,8 +157,8 @@ button {
 @media (max-width:420px) { .trade-console { padding:.55rem; border-width:3px; }.trade-display { min-height:265px; border-width:3px; }.trade-pets { grid-template-columns:minmax(0,1fr) 54px minmax(0,1fr); padding:.65rem .45rem; }.trade-pet-frame { height:145px; }.trade-pet-nameplate { min-width:3.1rem; padding:.18rem .45rem; }.trade-center-effect { font-size:1.2rem; }.trade-center-effect strong { font-size:.56rem; }.trade-pet-species { font-size:.6rem; } }
 
 /* Village guestbook: a compact pixel notice board, not a web comment card. */
-.guestbook-pixel { color:#382719; }.guestbook-board { border:4px solid #4e321d !important; border-radius:0 !important; background:#9a7143 !important; box-shadow:inset 0 0 0 4px #c4995d,inset 0 0 0 8px #735032,6px 7px 0 #302116 !important; }.guestbook-board > div:first-child { opacity:.42 !important; background:repeating-linear-gradient(90deg,rgba(76,48,27,.22) 0 3px,transparent 3px 18px),repeating-linear-gradient(0deg,rgba(245,218,164,.12) 0 2px,transparent 2px 20px) !important; }.guestbook-board > div:nth-child(2) { right:8%; left:8%; height:6px; border-radius:0 !important; background:#5d3b22 !important; box-shadow:0 3px 0 rgba(48,33,22,.55) !important; }.guestbook-board > div:nth-child(3) span { border:2px solid #4b301c !important; border-radius:0 !important; background:#ceb37c !important; box-shadow:2px 2px 0 #4b301c !important; }.guestbook-board > div:nth-child(3) span:nth-child(2) { height:3px; border:0 !important; background:#4b301c !important; box-shadow:none !important; }
-.guestbook-panel { border:3px solid #67452a !important; border-radius:0 !important; background:#e2cfa5 !important; box-shadow:inset 0 0 0 3px #f2e4c2,4px 4px 0 #593a23 !important; }.guestbook-panel > p:first-child { color:#705031 !important; font-family:Georgia,"Times New Roman",serif; font-size:.68rem; font-weight:800; letter-spacing:.18em; }.guestbook-panel h2,.guestbook-panel .text-2xl { font-family:Georgia,"Times New Roman",serif; font-weight:700; letter-spacing:.03em; }
+.guestbook-pixel { color:#382719; font-family: var(--font-pixel), var(--font-geist-sans), sans-serif; }.guestbook-board { border:4px solid #4e321d !important; border-radius:0 !important; background:#9a7143 !important; box-shadow:inset 0 0 0 4px #c4995d,inset 0 0 0 8px #735032,6px 7px 0 #302116 !important; }.guestbook-board > div:first-child { opacity:.42 !important; background:repeating-linear-gradient(90deg,rgba(76,48,27,.22) 0 3px,transparent 3px 18px),repeating-linear-gradient(0deg,rgba(245,218,164,.12) 0 2px,transparent 2px 20px) !important; }.guestbook-board > div:nth-child(2) { right:8%; left:8%; height:6px; border-radius:0 !important; background:#5d3b22 !important; box-shadow:0 3px 0 rgba(48,33,22,.55) !important; }.guestbook-board > div:nth-child(3) span { border:2px solid #4b301c !important; border-radius:0 !important; background:#ceb37c !important; box-shadow:2px 2px 0 #4b301c !important; }.guestbook-board > div:nth-child(3) span:nth-child(2) { height:3px; border:0 !important; background:#4b301c !important; box-shadow:none !important; }
+.guestbook-panel { border:3px solid #67452a !important; border-radius:0 !important; background:#e2cfa5 !important; box-shadow:inset 0 0 0 3px #f2e4c2,4px 4px 0 #593a23 !important; }.guestbook-panel > p:first-child { color:#705031 !important; font-size:.68rem; font-weight:800; letter-spacing:.18em; }.guestbook-panel h2,.guestbook-panel .text-2xl { font-weight:700; letter-spacing:.03em; }
 .guestbook-input { border:3px solid #65442a !important; border-radius:0 !important; background:#f3e6c8 !important; box-shadow:inset 0 0 0 2px #d1b883 !important; transition:border-color .1s,background-color .1s !important; }.guestbook-input::placeholder { color:#967e5b; }.guestbook-input:focus { border-color:#8a9a62 !important; background:#f8edcf !important; box-shadow:inset 0 0 0 2px #d1b883 !important; }
 .guestbook-button { border:3px solid #4d321f !important; border-radius:0 !important; background:#766b4a !important; box-shadow:inset 0 0 0 2px #b5ac7e,3px 3px 0 #4d321f !important; }.guestbook-button:hover:not(:disabled) { background:#8a8059 !important; transform:translateY(-1px); }.guestbook-button:active:not(:disabled) { transform:translate(2px,2px); box-shadow:inset 0 0 0 2px #b5ac7e,1px 1px 0 #4d321f !important; }
 .guestbook-notice { border:2px dashed #8a6a42 !important; border-radius:0 !important; background:#d8c18d !important; box-shadow:3px 3px 0 rgba(78,50,29,.38) !important; }.guestbook-count,.guestbook-mine { border:2px solid #765437; border-radius:0 !important; background:#c5b477 !important; box-shadow:2px 2px 0 rgba(78,50,29,.44); }
@@ -139,12 +174,42 @@ button {
    세로가 짧으면 폭에 맞춰지고 남는 공간은 여백이 된다. */
 .village-stage {
   container-type: size;
+  isolation: isolate;
+  background: #173f16;
+}
+
+.village-surroundings {
+  position: absolute;
+  z-index: -2;
+  inset: -6px;
+  background-color: #173f16;
+  background-image: url("/sprites/backgrounds/village-surroundings.png");
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  filter: blur(5px);
+  image-rendering: pixelated;
+}
+
+/* 바깥 숲을 살짝 눌러 실제 플레이 영역의 가독성을 유지한다. */
+.village-stage::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  pointer-events: none;
+  background: rgba(8, 35, 11, 0.06);
 }
 
 .village-fit {
+  z-index: 0;
   aspect-ratio: 15 / 11;
   width: min(100%, calc(100cqh * 15 / 11));
+  max-height: 100%;
+}
 
+.village-play-map {
+  box-shadow: none;
 }
 
 /* 로그인 화면 — 다마고치 등장 연출 (17.1) */
@@ -253,3 +318,13 @@ button {
   }
 
 }
+
+/* 씬 표시 틀 (SceneFrame.tsx).
+   내용은 고정 폭으로 그린 뒤 통째로 축소한다 — 스크롤이 생기지 않는다. */
+.scene-frame { position: absolute; left: 50%; top: 50%; width: 0; height: 0; }
+.scene-frame-content { position: absolute; left: 0; top: 0; transform-origin: center center; }
+
+/* 씬 안에서 뷰포트 단위(100vh)를 쓰면 틀이 아니라 화면 전체를 기준으로 잡아
+   틀 밖으로 삐져나간다. 틀 안에서는 내용 높이에 맡긴다. */
+.scene-frame-content .dex-book-bg { min-height: 0; }
+.scene-frame-content .dex-book-shell { min-height: 0; }

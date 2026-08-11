@@ -17,6 +17,7 @@ import {
   VILLAGE_MAP,
 } from "./constants";
 import { buildingSprite, playerSprite, type Direction } from "@/lib/sprites";
+import { judgeMine, type MineFailReason } from "@/lib/game/gather";
 import { useMe } from "./MeContext";
 
 const DIRECTION_VECTORS = {
@@ -62,6 +63,17 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
   // 완료 요청은 세션당 1회. 목표 도달 후에도 계속 누르면 같은 세션을 반복 전송해
   // 서버가 "이미 처리된 세션"으로 400 을 돌려주고 성공 메시지를 덮어쓴다.
   const mineCompletingRef = useRef(false);
+  /**
+   * 첫 연타 시각(performance.now). 소요 시간을 여기서부터 로컬로 잰다.
+   * 서버 시각으로 재면 mine/start 왕복이 포함되어 자동 연타에 관대해진다.
+   */
+  const mineStartedAtRef = useRef<number | null>(null);
+  /**
+   * 세션 생성 요청이 떠 있는 동안 켜둔다. mineLoading 은 state 라 리렌더 전에는
+   * 갱신되지 않아, 빠르게 연타하면 같은 순간의 옛 값을 보고 세션을 여러 번 만든다.
+   * 마지막 세션이 이기면서 그 전에 센 연타가 통째로 버려진다.
+   */
+  const mineStartingRef = useRef(false);
   const [playerPosition, setPlayerPosition] = useState(MAP_START);
   const [facing, setFacing] = useState<Facing>("down");
   const [walkFrame, setWalkFrame] = useState<0 | 1>(0);
@@ -73,8 +85,9 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
   const [mineSessionId, setMineSessionId] = useState<string | null>(null);
   const [mineClicks, setMineClicks] = useState(0);
   const [mineTarget, setMineTarget] = useState(MINE_CLICK_TARGET);
-  const [mineStatus, setMineStatus] = useState("Press SPACE to start mining.");
-  const [mineFeedback, setMineFeedback] = useState("Awaiting your first mine.");
+  const [mineFeedback, setMineFeedback] = useState("");
+  /** 마지막 채굴이 성공이었는가. 실패 문구를 초록색으로 띄우지 않기 위해 쓴다 */
+  const [mineOk, setMineOk] = useState(true);
   const [mineLoading, setMineLoading] = useState(false);
 
   const targetFacility = useMemo(() => {
@@ -167,20 +180,26 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
     if (mineLoading) {
       return;
     }
+    if (mineStartingRef.current) {
+      return;
+    }
+    mineStartingRef.current = true;
     mineClickRef.current = 0;
     mineCompletingRef.current = false;
+    mineStartedAtRef.current = null;
     setMineLoading(true);
-    setMineFeedback("Starting mine session...");
+    setMineFeedback("");
 
     const response = await fetch("/api/gather/mine/start", {
       method: "POST",
     });
     const payload = await response.json();
     setMineLoading(false);
+    mineStartingRef.current = false;
 
     if (!response.ok) {
-      setMineStatus("Mine failed to start.");
-      setMineFeedback(payload?.error ?? "Could not start mining.");
+      setMineOk(false);
+      setMineFeedback(payload?.error ?? "채굴을 시작하지 못했습니다.");
       return;
     }
 
@@ -188,21 +207,43 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
     setMineSessionId(data.sessionId);
     setMineTarget(data.clickTarget);
     setMineClicks(0);
-    setMineStatus("Tap SPACE to mine.");
-    setMineFeedback("Mining started. Press Space repeatedly.");
+    setMineFeedback("");
   }
 
-  async function completeMine(clicks: number) {
+  /** 판정 결과를 화면 문구로 옮긴다. 로컬 판정과 서버 판정이 같은 표현을 쓴다 */
+  function showMineVerdict(verdict: {
+    success: boolean;
+    reason?: MineFailReason;
+  }) {
+    if (verdict.success) {
+      setMineOk(true);
+      setMineFeedback("채굴 성공!");
+      return;
+    }
+    setMineOk(false);
+    setMineFeedback(
+      verdict.reason === "too_fast"
+        ? "너무 빠릅니다. 자동 연타로 보입니다."
+        : "연타 횟수가 모자랍니다.",
+    );
+  }
+
+  async function completeMine(clicks: number, elapsedMs: number) {
     if (!mineSessionId || mineLoading) {
       return;
     }
+
+    // 판정을 로컬에서 끝낸다. 서버 왕복을 기다리면 35번째 연타의 결과만 늦게 떠
+    // 연타가 끊긴 것처럼 느껴진다. 서버도 같은 규칙으로 다시 판정한다.
+    const verdict = judgeMine(clicks, elapsedMs);
+
     setMineLoading(true);
-    setMineFeedback("Submitting mine result...");
+    showMineVerdict(verdict);
 
     const response = await fetch("/api/gather/mine/finish", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sessionId: mineSessionId, clicks }),
+      body: JSON.stringify({ sessionId: mineSessionId, clicks, elapsedMs }),
     });
     const payload = (await response.json()) as MineFinishResponse;
     setMineLoading(false);
@@ -211,16 +252,23 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
     setMineTarget(MINE_CLICK_TARGET);
     mineClickRef.current = 0;
     mineCompletingRef.current = false;
+    mineStartedAtRef.current = null;
 
-    if (!response.ok || !payload.success) {
-      setMineStatus("Mine failed.");
-      setMineFeedback("Too fast or insufficient clicks. Try again.");
+    if (!response.ok) {
+      setMineOk(false);
+      setMineFeedback("서버와 통신하지 못했습니다.");
       return;
     }
 
-    setMineStatus("Mine complete!");
-    setMineFeedback(`Gained ${payload.gained} mineral.`);
-    await refresh();
+    // 서버가 다른 결론을 냈다면 서버 쪽이 맞다. 자원을 쥔 쪽이 서버다.
+    if (payload.success !== verdict.success) {
+      showMineVerdict({ success: payload.success, reason: payload.reason });
+    }
+
+    if (payload.success) {
+      setMineFeedback(`광물 ${payload.gained}개 획득!`);
+      await refresh();
+    }
   }
 
   function handleFacilityInteraction(scene: VillageScene) {
@@ -245,12 +293,20 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
         return;
       }
 
+      // 첫 연타에서 시계를 켠다. 세션 생성 응답을 기다린 시간은 빼야 한다.
+      if (mineStartedAtRef.current === null) {
+        mineStartedAtRef.current = performance.now();
+      }
+
       mineClickRef.current += 1;
       setMineClicks(Math.min(mineTarget, mineClickRef.current));
 
       if (mineClickRef.current >= mineTarget) {
         mineCompletingRef.current = true;
-        completeMine(mineClickRef.current);
+        completeMine(
+          mineClickRef.current,
+          Math.round(performance.now() - mineStartedAtRef.current),
+        );
       }
       return;
     }
@@ -344,10 +400,13 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
     : FARM_ICON_BY_STATE.empty;
 
   return (
-    <div className="village-stage grid h-full w-full place-items-center overflow-hidden">
+    <div className="village-stage relative grid h-full w-full place-items-center overflow-hidden">
+      {/* 화면 비율에 따라 생기는 여백은 원본 맵과 같은 결의 숲으로 채운다.
+          플레이 맵과 별도 레이어이므로 좌표/충돌 판정에는 영향을 주지 않는다. */}
+      <div className="village-surroundings" aria-hidden="true" />
       {/* 배경과 격자를 같은 상자에 담아야 시설 좌표가 그림과 어긋나지 않는다 */}
       <div
-        className="village-fit relative bg-cover bg-center"
+        className="village-fit village-play-map relative bg-cover bg-center"
         style={{
           backgroundImage: "url('/sprites/backgrounds/village.png')",
           imageRendering: "pixelated",
@@ -414,42 +473,50 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
           }),
         )}
 
-        <div className="absolute bottom-4 left-4 max-w-[320px] rounded-3xl border border-slate-800/80 bg-slate-950/95 p-4 text-slate-100 shadow-xl shadow-black/20 backdrop-blur-sm">
-          <p className="text-xs uppercase tracking-[0.35em] text-slate-500">Interaction Hint</p>
-          {targetFacility?.scene === "farm" ? (
-            <div className="mt-3 space-y-2">
-              <p className="text-sm text-slate-300">Farm ahead. Press <span className="text-amber-300">SPACE</span>.</p>
-              <p className="text-base font-semibold text-slate-100">
-                {farmState?.plantedAt
-                  ? farmReady
-                    ? "Ready to harvest"
-                    : `Growing (${formatTime(farmRemainingSeconds ?? 0)})`
-                  : "Empty field"}
+      </div>
+
+      {/* 힌트는 지도(village-fit) 밖, 화면(village-stage) 기준으로 붙인다.
+          지도 안에 두면 화면이 넓을 때 지도가 가운데로 모이면서 힌트도 함께
+          안쪽으로 딸려 들어가 왼쪽에 빈 공간이 크게 남는다. */}
+      <div className="absolute bottom-4 left-4 z-10 max-w-[320px] rounded-3xl border border-slate-800/80 bg-slate-950/95 p-4 text-slate-100 shadow-xl shadow-black/20 backdrop-blur-sm">
+        <p className="text-xs uppercase tracking-[0.35em] text-slate-500">Interaction Hint</p>
+        {targetFacility?.scene === "farm" ? (
+          <div className="mt-3 space-y-2">
+            <p className="text-sm text-slate-300">Farm ahead. Press <span className="text-amber-300">SPACE</span>.</p>
+            <p className="text-base font-semibold text-slate-100">
+              {farmState?.plantedAt
+                ? farmReady
+                  ? "Ready to harvest"
+                  : `Growing (${formatTime(farmRemainingSeconds ?? 0)})`
+                : "Empty field"}
+            </p>
+            <p className="text-sm text-slate-400">
+              {farmState?.plantedAt
+                ? farmReady
+                  ? "Harvest with SPACE"
+                  : "Wait until the crop is ready"
+                : "Plant seeds with SPACE"}
+            </p>
+            {farmFeedback ? <p className="text-sm text-emerald-200">{farmFeedback}</p> : null}
+          </div>
+        ) : targetFacility?.scene === "mine" ? (
+          <div className="mt-3 space-y-2">
+            <p className="text-sm text-slate-300">Mine ahead. Press <span className="text-amber-300">SPACE</span>.</p>
+            <p className="text-base font-semibold text-slate-100">
+              {mineSessionId ? `채굴 ${mineClicks} / ${mineTarget}` : "대기 중"}
+            </p>
+            <p className="text-sm text-slate-400">{mineSessionId ? "목표까지 SPACE 를 계속 누르세요." : "SPACE 로 채굴을 시작합니다."}</p>
+            {mineFeedback ? (
+              <p className={`text-sm ${mineOk ? "text-emerald-200" : "text-red-300"}`}>
+                {mineFeedback}
               </p>
-              <p className="text-sm text-slate-400">
-                {farmState?.plantedAt
-                  ? farmReady
-                    ? "Harvest with SPACE"
-                    : "Wait until the crop is ready"
-                  : "Plant seeds with SPACE"}
-              </p>
-              {farmFeedback ? <p className="text-sm text-emerald-200">{farmFeedback}</p> : null}
-            </div>
-          ) : targetFacility?.scene === "mine" ? (
-            <div className="mt-3 space-y-2">
-              <p className="text-sm text-slate-300">Mine ahead. Press <span className="text-amber-300">SPACE</span>.</p>
-              <p className="text-base font-semibold text-slate-100">
-                {mineSessionId ? `Mining ${mineClicks} / ${mineTarget}` : "Ready to start"}
-              </p>
-              <p className="text-sm text-slate-400">{mineSessionId ? "Keep tapping Space until complete." : "Start mine session with Space."}</p>
-              {mineFeedback ? <p className="text-sm text-emerald-200">{mineFeedback}</p> : null}
-            </div>
-          ) : (
-            <div className="mt-3 text-sm text-slate-400">
-              Face a facility and press <span className="text-amber-300">SPACE</span> to interact.
-            </div>
-          )}
-        </div>
+            ) : null}
+          </div>
+        ) : (
+          <div className="mt-3 text-sm text-slate-400">
+            Face a facility and press <span className="text-amber-300">SPACE</span> to interact.
+          </div>
+        )}
       </div>
     </div>
   );
