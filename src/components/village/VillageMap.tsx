@@ -400,7 +400,7 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
     : FARM_ICON_BY_STATE.empty;
 
   return (
-    <div className="village-stage grid h-full w-full place-items-center overflow-hidden">
+    <div className="village-stage relative grid h-full w-full place-items-center overflow-hidden">
       {/* 배경과 격자를 같은 상자에 담아야 시설 좌표가 그림과 어긋나지 않는다 */}
       <div
         className="village-fit relative bg-cover bg-center"
@@ -470,46 +470,50 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
           }),
         )}
 
-        <div className="absolute bottom-4 left-4 max-w-[320px] rounded-3xl border border-slate-800/80 bg-slate-950/95 p-4 text-slate-100 shadow-xl shadow-black/20 backdrop-blur-sm">
-          <p className="text-xs uppercase tracking-[0.35em] text-slate-500">Interaction Hint</p>
-          {targetFacility?.scene === "farm" ? (
-            <div className="mt-3 space-y-2">
-              <p className="text-sm text-slate-300">Farm ahead. Press <span className="text-amber-300">SPACE</span>.</p>
-              <p className="text-base font-semibold text-slate-100">
-                {farmState?.plantedAt
-                  ? farmReady
-                    ? "Ready to harvest"
-                    : `Growing (${formatTime(farmRemainingSeconds ?? 0)})`
-                  : "Empty field"}
+      </div>
+
+      {/* 힌트는 지도(village-fit) 밖, 화면(village-stage) 기준으로 붙인다.
+          지도 안에 두면 화면이 넓을 때 지도가 가운데로 모이면서 힌트도 함께
+          안쪽으로 딸려 들어가 왼쪽에 빈 공간이 크게 남는다. */}
+      <div className="absolute bottom-4 left-4 z-10 max-w-[320px] rounded-3xl border border-slate-800/80 bg-slate-950/95 p-4 text-slate-100 shadow-xl shadow-black/20 backdrop-blur-sm">
+        <p className="text-xs uppercase tracking-[0.35em] text-slate-500">Interaction Hint</p>
+        {targetFacility?.scene === "farm" ? (
+          <div className="mt-3 space-y-2">
+            <p className="text-sm text-slate-300">Farm ahead. Press <span className="text-amber-300">SPACE</span>.</p>
+            <p className="text-base font-semibold text-slate-100">
+              {farmState?.plantedAt
+                ? farmReady
+                  ? "Ready to harvest"
+                  : `Growing (${formatTime(farmRemainingSeconds ?? 0)})`
+                : "Empty field"}
+            </p>
+            <p className="text-sm text-slate-400">
+              {farmState?.plantedAt
+                ? farmReady
+                  ? "Harvest with SPACE"
+                  : "Wait until the crop is ready"
+                : "Plant seeds with SPACE"}
+            </p>
+            {farmFeedback ? <p className="text-sm text-emerald-200">{farmFeedback}</p> : null}
+          </div>
+        ) : targetFacility?.scene === "mine" ? (
+          <div className="mt-3 space-y-2">
+            <p className="text-sm text-slate-300">Mine ahead. Press <span className="text-amber-300">SPACE</span>.</p>
+            <p className="text-base font-semibold text-slate-100">
+              {mineSessionId ? `채굴 ${mineClicks} / ${mineTarget}` : "대기 중"}
+            </p>
+            <p className="text-sm text-slate-400">{mineSessionId ? "목표까지 SPACE 를 계속 누르세요." : "SPACE 로 채굴을 시작합니다."}</p>
+            {mineFeedback ? (
+              <p className={`text-sm ${mineOk ? "text-emerald-200" : "text-red-300"}`}>
+                {mineFeedback}
               </p>
-              <p className="text-sm text-slate-400">
-                {farmState?.plantedAt
-                  ? farmReady
-                    ? "Harvest with SPACE"
-                    : "Wait until the crop is ready"
-                  : "Plant seeds with SPACE"}
-              </p>
-              {farmFeedback ? <p className="text-sm text-emerald-200">{farmFeedback}</p> : null}
-            </div>
-          ) : targetFacility?.scene === "mine" ? (
-            <div className="mt-3 space-y-2">
-              <p className="text-sm text-slate-300">Mine ahead. Press <span className="text-amber-300">SPACE</span>.</p>
-              <p className="text-base font-semibold text-slate-100">
-                {mineSessionId ? `채굴 ${mineClicks} / ${mineTarget}` : "대기 중"}
-              </p>
-              <p className="text-sm text-slate-400">{mineSessionId ? "목표까지 SPACE 를 계속 누르세요." : "SPACE 로 채굴을 시작합니다."}</p>
-              {mineFeedback ? (
-                <p className={`text-sm ${mineOk ? "text-emerald-200" : "text-red-300"}`}>
-                  {mineFeedback}
-                </p>
-              ) : null}
-            </div>
-          ) : (
-            <div className="mt-3 text-sm text-slate-400">
-              Face a facility and press <span className="text-amber-300">SPACE</span> to interact.
-            </div>
-          )}
-        </div>
+            ) : null}
+          </div>
+        ) : (
+          <div className="mt-3 text-sm text-slate-400">
+            Face a facility and press <span className="text-amber-300">SPACE</span> to interact.
+          </div>
+        )}
       </div>
     </div>
   );
