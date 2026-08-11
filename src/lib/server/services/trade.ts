@@ -289,3 +289,34 @@ export async function getTradeStatusByCode(
     theirPet: theirPet ? toTradePetView(theirPet) : null,
   };
 }
+
+/**
+ * 교환 취소 (9장 상태머신의 `취소`).
+ *
+ * 코드를 발급했는데 상대가 오지 않으면 만료(10분)까지 개체가 잠긴 채 묶인다.
+ * 그동안 다른 사람과 교환할 수 없으므로, 제안자가 직접 풀 수 있어야 한다.
+ *
+ * 상대가 참여한 뒤에도 취소할 수 있다. 이 시점에는 상대 개체까지 잠겨 있어
+ * 방치하면 두 사람이 함께 묶인다. 다만 이미 완료·거절된 건은 되돌리지 않는다.
+ */
+export async function cancelTrade(
+  userId: string,
+  tradeId: string,
+): Promise<{ status: 'cancelled' }> {
+  return db.$transaction(async (tx) => {
+    const trade = await tx.trade.findUnique({ where: { id: tradeId } });
+    if (!trade) {
+      throw new TradeError('존재하지 않는 교환입니다.');
+    }
+    if (trade.fromUserId !== userId) {
+      throw new TradeError('제안자만 취소할 수 있습니다.');
+    }
+    if (trade.status !== 'proposed' && trade.status !== 'joined') {
+      throw new TradeError('이미 처리된 교환입니다.');
+    }
+
+    // 잠긴 개체 해제까지 함께 처리한다
+    await invalidateTrade(tx, trade);
+    return { status: 'cancelled' as const };
+  });
+}

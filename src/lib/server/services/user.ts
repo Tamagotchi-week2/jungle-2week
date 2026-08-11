@@ -107,6 +107,7 @@ export async function getMeSnapshot(userId: string): Promise<MeResponse> {
       select: {
         nickname: true,
         pendingRewardIsGold: true,
+        unclaimedRewards: true,
       },
     }),
     db.userEgg.findMany({ where: { userId } }),
@@ -143,6 +144,8 @@ export async function getMeSnapshot(userId: string): Promise<MeResponse> {
     activePet: activePet ? toPetView(activePet) : null,
     dexCompleted,
     dexTotal: DEX_TOTAL,
+    // 결과(금색 여부)는 절대 내려보내지 않는다. 존재 여부만 알린다 (6장).
+    unclaimedRewards: user.unclaimedRewards,
     // 결과(금색 여부)는 절대 내려보내지 않는다. 존재 여부만 알린다 (6장).
     hasPendingReward: user.pendingRewardIsGold !== null,
   };

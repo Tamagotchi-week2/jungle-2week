@@ -35,7 +35,15 @@ export interface MeResponse {
   /** 도감 완성도 */
   dexCompleted: number;
   dexTotal: number;
-  /** 대기 중인 보상 알이 있는가 (결과는 포함하지 않는다) */
+  /**
+   * 아직 수령하지 않은 보상 알 개수. 성체 완성 시 늘어난다.
+   * 0 보다 크면 "보상 알 받기" 진입점을 노출한다.
+   */
+  unclaimedRewards: number;
+  /**
+   * 이미 판정을 굴려둔 건이 있는가. 선택만 남은 상태다.
+   * 판정 결과(금색 여부)는 절대 포함하지 않는다 (6장).
+   */
   hasPendingReward: boolean;
 }
 
@@ -226,6 +234,14 @@ export interface TradeJoinResponse {
   tradeId: string;
   theirPet: TradePetView;
   myPet: TradePetView;
+}
+
+/** 제안자가 교환을 취소한다. 잠긴 개체가 함께 풀린다 */
+export interface TradeCancelRequest {
+  tradeId: string;
+}
+export interface TradeCancelResponse {
+  status: 'cancelled';
 }
 
 /** 제안자가 최종 수락 / 거절한다 */

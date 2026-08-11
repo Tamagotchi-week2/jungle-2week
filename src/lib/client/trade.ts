@@ -3,6 +3,8 @@ import type {
   TradeCreateResponse,
   TradeJoinRequest,
   TradeJoinResponse,
+  TradeCancelRequest,
+  TradeCancelResponse,
   TradePetView,
   TradeResolveRequest,
   TradeResolveResponse,
@@ -52,6 +54,14 @@ export function joinTrade(body: TradeJoinRequest) {
 
 export function resolveTrade(body: TradeResolveRequest) {
   return request<TradeResolveResponse>('/api/trade/resolve', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+}
+
+/** 제안자가 교환을 취소한다. 잠긴 개체가 함께 풀린다 */
+export function cancelTrade(body: TradeCancelRequest) {
+  return request<TradeCancelResponse>('/api/trade/cancel', {
     method: 'POST',
     body: JSON.stringify(body),
   });
