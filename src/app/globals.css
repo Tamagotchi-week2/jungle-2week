@@ -636,7 +636,6 @@ button {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-
 }
 
 /* 씬 표시 틀 (SceneFrame.tsx).
