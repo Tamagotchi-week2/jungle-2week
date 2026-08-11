@@ -129,3 +129,19 @@ button {
 .guestbook-notice { border:2px dashed #8a6a42 !important; border-radius:0 !important; background:#d8c18d !important; box-shadow:3px 3px 0 rgba(78,50,29,.38) !important; }.guestbook-count,.guestbook-mine { border:2px solid #765437; border-radius:0 !important; background:#c5b477 !important; box-shadow:2px 2px 0 rgba(78,50,29,.44); }
 .guestbook-entry { position:relative; border:3px solid #805c39 !important; border-radius:0 !important; background:#f3e3bd !important; box-shadow:4px 4px 0 #745135 !important; transition:transform .1s,background-color .1s; }.guestbook-entry::before { content:""; position:absolute; top:0; right:0; width:11px; height:11px; border-bottom:2px solid #b99866; border-left:2px solid #b99866; background:#e5cea1; }.guestbook-entry:hover { background:#f8eaca !important; transform:translateY(-1px); }.guestbook-entry p { color:#46301e !important; }.guestbook-entry .text-xs { color:#856644 !important; }
 @media (max-width:640px) { .guestbook-board > div:nth-child(2) { right:12%; left:12%; }.guestbook-panel { padding:1.1rem !important; }.guestbook-entry { box-shadow:3px 3px 0 #745135 !important; } }
+
+/* 마을 화면 크기 맞춤.
+   맵은 15:11 비율을 유지하면서 화면(스테이지) 안에 완전히 들어가야 한다.
+   가로만 꽉 채우면(w-full) 넓은 화면에서 세로가 넘쳐 스크롤이 생긴다.
+
+   컨테이너 쿼리 단위(cqh)로 스테이지 높이를 읽어, 비율을 지킨 폭과
+   실제 폭 중 작은 쪽을 택한다. 결과적으로 가로가 넓으면 높이에,
+   세로가 짧으면 폭에 맞춰지고 남는 공간은 여백이 된다. */
+.village-stage {
+  container-type: size;
+}
+
+.village-fit {
+  aspect-ratio: 15 / 11;
+  width: min(100%, calc(100cqh * 15 / 11));
+}

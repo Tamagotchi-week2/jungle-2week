@@ -325,15 +325,15 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
     : FARM_ICON_BY_STATE.empty;
 
   return (
-    <div className="relative h-full w-full overflow-hidden">
+    <div className="village-stage grid h-full w-full place-items-center overflow-hidden">
+      {/* 배경과 격자를 같은 상자에 담아야 시설 좌표가 그림과 어긋나지 않는다 */}
       <div
-        className="absolute inset-0 bg-cover bg-center"
+        className="village-fit relative bg-cover bg-center"
         style={{
           backgroundImage: "url('/sprites/backgrounds/village.png')",
           imageRendering: "pixelated",
         }}
-      />
-      <div className="relative aspect-[15/11] w-full">
+      >
         {VILLAGE_MAP.flatMap((row, y) =>
           row.map((cell, x) => {
             const facility = cell.facility ? FACILITY_BY_TYPE[cell.facility] : null;
