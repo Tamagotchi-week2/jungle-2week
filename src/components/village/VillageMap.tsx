@@ -412,8 +412,7 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
         {VILLAGE_MAP.flatMap((row, y) =>
           row.map((cell, x) => {
             const facility = cell.facility ? FACILITY_BY_TYPE[cell.facility] : null;
-            const isPlayer = playerPosition.x === x && playerPosition.y === y;
-            if (!facility && !isPlayer) {
+            if (!facility) {
               return null;
             }
 
@@ -426,25 +425,7 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
               height: `${height}%`,
             };
 
-            if (isPlayer) {
-              return (
-                <div
-                  key={`player-${x}-${y}`}
-                  style={style}
-                  className="absolute flex items-center justify-center"
-                >
-                  <img
-                    src={playerSprite(facing, walkFrame)}
-                    alt="Player"
-                    className="h-full w-full object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.35)]"
-                    style={{ imageRendering: "pixelated" }}
-                    draggable={false}
-                  />
-                </div>
-              );
-            }
-
-            const facilityImage = facility?.scene === "farm" ? farmIcon : facility!.image;
+            const facilityImage = facility.scene === "farm" ? farmIcon : facility.image;
 
             return (
               <button
@@ -452,15 +433,15 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
                 type="button"
                 style={style}
                 className="absolute flex items-center justify-center"
-                onClick={() => handleFacilityInteraction(facility!.scene)}
+                onClick={() => handleFacilityInteraction(facility.scene)}
               >
                 <img
                   src={facilityImage}
-                  alt={facility!.label}
+                  alt={facility.label}
                   className="h-full w-full object-contain p-1"
                   style={{
                     imageRendering: "pixelated",
-                    transform: facility!.scale ? `scale(${facility!.scale})` : undefined,
+                    transform: facility.scale ? `scale(${facility.scale})` : undefined,
                     transformOrigin: "center bottom",
                   }}
                   draggable={false}
@@ -470,6 +451,25 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
           }),
         )}
 
+        {/* 플레이어는 시설 격자와 별개로 그린다. 같은 칸에 있어도 시설 위에
+            항상 얹혀 보여야 하고, 시설 자체가 가려져 사라지면 안 된다. */}
+        <div
+          style={{
+            top: `${playerPosition.y * (100 / MAP_HEIGHT)}%`,
+            left: `${playerPosition.x * (100 / MAP_WIDTH)}%`,
+            width: `${100 / MAP_WIDTH}%`,
+            height: `${100 / MAP_HEIGHT}%`,
+          }}
+          className="pointer-events-none absolute z-20 flex items-center justify-center"
+        >
+          <img
+            src={playerSprite(facing, walkFrame)}
+            alt="Player"
+            className="h-full w-full object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.35)]"
+            style={{ imageRendering: "pixelated" }}
+            draggable={false}
+          />
+        </div>
       </div>
 
       {/* 힌트는 지도(village-fit) 밖, 화면(village-stage) 기준으로 붙인다.
