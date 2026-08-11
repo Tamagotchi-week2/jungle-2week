@@ -8,9 +8,29 @@
 
 ```bash
 npm install
-cp .env.example .env        # DATABASE_URL, AUTH_SECRET 채우기
-npx prisma migrate dev
+npx prisma generate         # Prisma Client 생성 (.env 없이도 동작)
+npx next typegen            # 라우트 타입 생성 — 없으면 tsc 가 실패한다
 npm run dev
+```
+
+`next typegen` 을 건너뛰면 클론 직후 `Cannot find name 'LayoutProps'` 타입 오류가 뜬다.
+`next-env.d.ts` 가 `.next/types/*.d.ts` 를 참조하는데 그 폴더가 아직 없기 때문이다.
+`npm run dev` 를 한 번 돌려도 자동 생성되지만, 에디터를 먼저 열면 빨간 줄부터 보게 된다.
+
+### DB 가 필요한 트랙
+
+| 트랙 | `.env` 없이 시작 |
+|---|---|
+| B (마을·미니게임) | ✅ 가능 |
+| D (아트·도감 UI) | ✅ 가능 |
+| A (코어) | ❌ 필요 |
+| C (인증·소셜) | ❌ 필요 |
+
+A · C 는 추가로 다음이 필요하다. `DATABASE_URL` 과 `AUTH_SECRET` 은 저장소 밖에서 공유받는다.
+
+```bash
+cp .env.example .env        # 값 채우기
+npx prisma migrate dev
 ```
 
 ## 스크립트
