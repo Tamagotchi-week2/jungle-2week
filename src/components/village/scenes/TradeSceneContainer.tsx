@@ -75,7 +75,11 @@ export default function TradeSceneContainer({ onClose }: { onClose?: () => void 
       return;
     }
     const body = (await res.json()) as AdultPetsResponse;
-    const tradable = body.pets.filter((p) => !p.isTraded);
+    // 교환을 마친 개체와, 아직 다른 교환에 걸려 있는 개체를 모두 뺀다.
+    // 후자는 isTraded 가 false 라 예전에는 후보로 보였고, 고르면 서버가
+    // 거절해 "왜 안 되지" 로 끝났다. loadPets 는 교환 시작 전이나 끝난 뒤에만
+    // 부르므로, 내 진행 중인 개체가 여기서 사라질 일은 없다.
+    const tradable = body.pets.filter((p) => !p.isTraded && !p.isLocked);
     setPets(tradable);
     setSelectedId((current) =>
       current && tradable.some((p) => p.id === current)

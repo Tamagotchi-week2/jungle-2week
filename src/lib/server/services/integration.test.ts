@@ -493,6 +493,86 @@ suite('서비스 계층 통합', () => {
       await expect(createTrade(b, petA.id)).rejects.toThrow(GameRuleError);
     });
 
+    it('교환됨 표시는 실제로 성사됐을 때만 켜진다', async () => {
+      const a = await newUser();
+      const b = await newUser();
+      const petA = await raiseToAdult(a, 'air');
+      const petB = await raiseToAdult(b, 'land');
+
+      const traded = async (id: string) =>
+        (await db.pet.findUniqueOrThrow({ where: { id } })).isTraded;
+
+      // 발급만 한 상태 — 아직 아무것도 오가지 않았다
+      const created = await createTrade(a, petA.id);
+      expect(await traded(petA.id)).toBe(false);
+
+      // 상대가 들어왔지만 제안자가 확정하기 전 — 여전히 아니다
+      const joined = await joinTrade(b, created.code, petB.id);
+      expect(await traded(petA.id)).toBe(false);
+      expect(await traded(petB.id)).toBe(false);
+
+      // 거절 — 잠금만 풀리고 표시는 그대로 꺼져 있어야 한다
+      await resolveTrade(a, joined.tradeId, false);
+      expect(await traded(petA.id)).toBe(false);
+      expect(await traded(petB.id)).toBe(false);
+
+      // 다시 걸었다가 취소 — 마찬가지다
+      const again = await createTrade(a, petA.id);
+      const joinedAgain = await joinTrade(b, again.code, petB.id);
+      await cancelTrade(a, joinedAgain.tradeId);
+      expect(await traded(petA.id)).toBe(false);
+      expect(await traded(petB.id)).toBe(false);
+
+      // 성사됐을 때 비로소 양쪽 다 켜진다
+      const final = await createTrade(a, petA.id);
+      const finalJoined = await joinTrade(b, final.code, petB.id);
+      await resolveTrade(a, finalJoined.tradeId, true);
+      expect(await traded(petA.id)).toBe(true);
+      expect(await traded(petB.id)).toBe(true);
+    });
+
+    it('교환됨 개체는 내놓을 후보에서 빠진다', async () => {
+      const a = await newUser();
+      const b = await newUser();
+      const petA = await raiseToAdult(a, 'air');
+      const petB = await raiseToAdult(b, 'land');
+
+      const created = await createTrade(a, petA.id);
+      const joined = await joinTrade(b, created.code, petB.id);
+      await resolveTrade(a, joined.tradeId, true);
+
+      // 교환 후 a 는 petB 를 갖고 있지만, 그 개체도 이미 교환된 것이라
+      // 다시 내놓을 수 없다 (개체당 1회 한정, 9장).
+      const mine = await listAdultPets(a);
+      expect(mine.pets.map((p) => p.id)).toContain(petB.id);
+      expect(mine.pets.filter((p) => !p.isTraded)).toHaveLength(0);
+      expect(mine.tradableCount).toBe(0);
+    });
+
+    it('다른 교환에 걸린 개체는 isLocked 로 구분된다', async () => {
+      const a = await newUser();
+      const b = await newUser();
+      const petA = await raiseToAdult(a, 'air');
+      const petB = await raiseToAdult(b, 'land');
+
+      const before = await listAdultPets(a);
+      expect(before.pets[0].isLocked).toBe(false);
+
+      const created = await createTrade(a, petA.id);
+
+      // 아직 성사되지 않았으므로 isTraded 는 false 다. 화면이 이것만 보고
+      // 거르면 잠긴 개체가 후보로 남는다 — isLocked 가 그 구멍을 메운다.
+      const locked = await listAdultPets(a);
+      expect(locked.pets[0].isTraded).toBe(false);
+      expect(locked.pets[0].isLocked).toBe(true);
+
+      const joined = await joinTrade(b, created.code, petB.id);
+      await cancelTrade(a, joined.tradeId);
+
+      const unlocked = await listAdultPets(a);
+      expect(unlocked.pets[0].isLocked).toBe(false);
+    });
+
     it('성체가 아니면 교환에 걸 수 없다', async () => {
       const userId = await newUser();
       await giveEgg(userId, 'air');

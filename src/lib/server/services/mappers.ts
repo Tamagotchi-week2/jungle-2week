@@ -62,5 +62,6 @@ export function toTradePetView(pet: PetWithSpecies): TradePetView {
     combo: pet.species.combo as Combo,
     isAlbino: pet.isAlbino,
     isTraded: pet.isTraded,
+    isLocked: pet.lockedByTradeId !== null,
   };
 }

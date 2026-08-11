@@ -233,6 +233,11 @@ export interface TradePetView {
   isAlbino: boolean;
   /** 이미 교환한 개체인가. 개체당 1회 한정이므로 다시 걸 수 없다 (9장) */
   isTraded: boolean;
+  /**
+   * 다른 교환에 걸려 있는가. 성사되기 전이라 isTraded 는 아직 false 지만,
+   * 이 상태로 다시 걸면 서버가 거절한다. 화면이 후보에서 빼는 데 쓴다.
+   */
+  isLocked: boolean;
 }
 
 /** 내 성체를 걸고 코드를 발급한다 */
