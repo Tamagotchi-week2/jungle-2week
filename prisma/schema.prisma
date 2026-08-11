@@ -3,6 +3,10 @@
 
 generator client {
   provider = "prisma-client-js"
+  // 기본 위치(node_modules/.prisma/client)는 tsx 가 서브패스 import(#main-entry-point)를
+  // 해석하지 못해 시드 실행이 실패한다. 프로젝트 내부로 생성해 우회한다.
+  // Prisma 7 은 이 output 지정을 필수로 요구하므로 업그레이드에도 유리하다.
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -59,11 +63,14 @@ model User {
   // 보상 알: 최초 성체 완성 1회 한정 금색 확정 (6장)
   firstAdultRewardClaimed Boolean @default(false) @map("first_adult_reward_claimed")
 
+  // 아직 수령하지 않은 보상 알 개수. 성체 완성 시 +1, 수령 시 -1.
+  // 이 값이 없으면 reward/open 을 반복 호출해 알을 무한히 받을 수 있다.
+  unclaimedRewards Int @default(0) @map("unclaimed_rewards")
+
   // 진행 중인 보상 알 판정. null 이면 대기 중인 건이 없다.
   // 이미 존재하는데 open 이 다시 호출되면 재롤하지 않고 이 값을 그대로 쓴다.
   pendingRewardIsGold Boolean? @map("pending_reward_is_gold")
 
-  tutorialStep Int      @default(0) @map("tutorial_step")
   createdAt    DateTime @default(now()) @map("created_at")
 
   eggs            UserEgg[]

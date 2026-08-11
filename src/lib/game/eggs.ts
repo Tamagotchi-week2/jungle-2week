@@ -6,6 +6,7 @@
  */
 
 import { BALANCE } from './constants';
+import { GameRuleError } from './errors';
 import type { EggType } from './types';
 import type { Rng } from './evolution';
 
@@ -66,7 +67,7 @@ export function resolveRewardEgg(
 ): EggType {
   if (roll.isGold) return 'gold';
   if (!SELECTABLE_EGG_TYPES.includes(chosen)) {
-    throw new Error(`선택할 수 없는 알 종류: ${chosen}`);
+    throw new GameRuleError(`선택할 수 없는 알 종류: ${chosen}`);
   }
   return chosen;
 }

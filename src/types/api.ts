@@ -26,7 +26,6 @@ export interface ApiError {
 
 export interface MeResponse {
   nickname: string;
-  tutorialStep: number;
   /** 알 인벤토리 (종류별 개수) */
   eggs: Record<EggType, number>;
   /** 자원 인벤토리 */
@@ -36,7 +35,15 @@ export interface MeResponse {
   /** 도감 완성도 */
   dexCompleted: number;
   dexTotal: number;
-  /** 대기 중인 보상 알이 있는가 (결과는 포함하지 않는다) */
+  /**
+   * 아직 수령하지 않은 보상 알 개수. 성체 완성 시 늘어난다.
+   * 0 보다 크면 "보상 알 받기" 진입점을 노출한다.
+   */
+  unclaimedRewards: number;
+  /**
+   * 이미 판정을 굴려둔 건이 있는가. 선택만 남은 상태다.
+   * 판정 결과(금색 여부)는 절대 포함하지 않는다 (6장).
+   */
   hasPendingReward: boolean;
 }
 
@@ -78,6 +85,18 @@ export interface FeedResponse {
   resources: Record<ResourceType, number>;
   /** 이번 급여로 진화 조건을 채웠는가 */
   canEvolve: boolean;
+}
+
+/**
+ * 보유한 성체 목록.
+ *
+ * `/api/me` 의 activePet 은 육성 중인 개체(stage < 3)만 담으므로,
+ * 교환 화면이 고를 대상은 여기서 받아야 한다.
+ */
+export interface AdultPetsResponse {
+  pets: TradePetView[];
+  /** 아직 교환하지 않은 개체 수. 교환 탭 노출 판단용 */
+  tradableCount: number;
 }
 
 export interface EvolveRequest {
@@ -156,9 +175,17 @@ export interface FishCastResponse {
   biteDelayMs: number;
 }
 
-/** 어업 판정 — 클라이언트는 입력했다는 사실만 보내고 판정은 서버가 한다 */
+/**
+ * 어업 판정.
+ *
+ * 반응시간은 **클라이언트가 로컬에서 잰다**. 서버가 요청 도착 시각으로 재면
+ * 왕복 지연이 반응시간에 그대로 더해져, 화면상 제때 눌러도 실패한다.
+ * 서버는 이 값이 물리적으로 가능한 시각에 도착했는지만 검증한다.
+ */
 export interface FishStrikeRequest {
   sessionId: string;
+  /** 입질 표시부터 입력까지 걸린 시간(ms). 클라이언트 측정값 */
+  reactionMs: number;
 }
 export interface FishStrikeResponse {
   success: boolean;
@@ -194,6 +221,8 @@ export interface TradePetView {
   eggType: EggType;
   combo: Combo;
   isAlbino: boolean;
+  /** 이미 교환한 개체인가. 개체당 1회 한정이므로 다시 걸 수 없다 (9장) */
+  isTraded: boolean;
 }
 
 /** 내 성체를 걸고 코드를 발급한다 */
@@ -215,6 +244,14 @@ export interface TradeJoinResponse {
   tradeId: string;
   theirPet: TradePetView;
   myPet: TradePetView;
+}
+
+/** 제안자가 교환을 취소한다. 잠긴 개체가 함께 풀린다 */
+export interface TradeCancelRequest {
+  tradeId: string;
+}
+export interface TradeCancelResponse {
+  status: 'cancelled';
 }
 
 /** 제안자가 최종 수락 / 거절한다 */
