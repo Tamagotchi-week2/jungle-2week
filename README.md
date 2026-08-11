@@ -67,4 +67,31 @@ public/sprites/           스프라이트
 | C | 인증 · 소셜 | 로그인 게이트, 교환, 방명록 |
 | D | 아트 · UI | 스프라이트, 도감 UI, 연출 |
 
-브랜치는 `feat/a-core`, `feat/b-village`, `feat/c-social`, `feat/d-art` 로 나누고 `main` 에 PR 로 합친다.
+## 협업 규칙
+
+### 브랜치
+
+```
+main            항상 초록불. 직접 push 금지
+ └─ <담당자>/<작업>      예) a/feed-api, b/village-tilemap, c/auth-gate, d/dex-grid
+```
+
+- 담당자별 장수 브랜치를 두지 않는다. **작업 단위로 만들고 머지 후 삭제**한다
+- 브랜치 수명은 2일을 넘기지 않는다. 길어질 것 같으면 작업을 쪼개서 먼저 머지한다
+- PR 전에 `git fetch origin && git rebase origin/main`
+- GitHub 에서 **Squash merge** 로 합친다
+
+### 브랜치 보호 대신 지키는 약속
+
+저장소 플랜 제약으로 브랜치 보호를 쓰지 않는다. 다음은 규칙으로 지킨다.
+
+- `main` 에 직접 push 하지 않는다. 항상 PR 을 거친다
+- 머지 전 Actions 탭에서 **CI 초록불을 확인**한다
+- 남의 디렉토리를 건드린 PR 은 해당 담당자 리뷰를 받는다
+- `src/types/api.ts` 변경은 **단독 PR** 로 올리고 머지 후 팀에 알린다. 전원에게 영향이 간다
+
+### 비밀 값
+
+`.env` 는 `.gitignore` 로 제외되어 있다. `DATABASE_URL`, `AUTH_SECRET` 은 **저장소 밖에서** 공유한다.
+
+`.env.example` 에 실제 값을 적지 않는다. 이 파일은 추적되므로 그대로 푸시된다.
