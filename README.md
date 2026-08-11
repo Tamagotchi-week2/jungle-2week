@@ -49,6 +49,8 @@ npm run db:seed             # 24종 마스터 + 테스트 계정 2개
 | `npm run lint` | ESLint |
 | `npm run verify` | **PR 전 필수** — 타입 체크 + 테스트 + 린트 일괄 |
 | `npm run db:seed` | 24종 마스터 + 테스트 계정 시드 |
+| `npm run db:inspect` | **DB 실제 구조 출력** — 테이블·컬럼·제약·행 수·적용된 마이그레이션 |
+| `npm run db:studio` | Prisma Studio (브라우저에서 데이터 조회·수정) |
 | `npm run db:reset` | DB 초기화 후 마이그레이션·시드 재실행 |
 
 ### 통합 테스트

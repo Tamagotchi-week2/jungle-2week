@@ -3,6 +3,7 @@
 import { useState } from 'react';
 
 import { joinTrade } from '@/lib/client/trade';
+import TradeScene from '@/components/village/scenes/TradeScene';
 import type { TradeJoinResponse } from '@/types/api';
 
 interface TradeJoinPanelProps {
@@ -37,20 +38,12 @@ export function TradeJoinPanel({ myAdultPets, onJoined }: TradeJoinPanelProps) {
 
   if (result) {
     return (
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col items-center gap-3">
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
           제안자에게 전달되었습니다. 상대의 최종 수락을 기다려 주세요.
         </p>
-        <div className="flex justify-between gap-4 text-sm">
-          <div>
-            <p className="font-medium">내가 내놓은 개체</p>
-            <p>{result.myPet.speciesName}{result.myPet.isAlbino ? ' (알비노)' : ''}</p>
-          </div>
-          <div>
-            <p className="font-medium">받게 될 개체</p>
-            <p>{result.theirPet.speciesName}{result.theirPet.isAlbino ? ' (알비노)' : ''}</p>
-          </div>
-        </div>
+        {/* 참여자는 수락 권한이 없다(제안자만 가능). 버튼 없이 상태만 보여준다 */}
+        <TradeScene myPet={result.myPet} theirPet={result.theirPet} status="trading" />
       </div>
     );
   }

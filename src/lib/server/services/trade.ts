@@ -7,6 +7,7 @@ import { db } from '@/lib/server/db';
 import { BALANCE } from '@/lib/game/constants';
 import { DomainError } from '@/lib/server/errors';
 import { registerSpecies } from '@/lib/server/services/dex';
+import { toTradePetView } from '@/lib/server/services/mappers';
 import type {
   TradeCreateResponse,
   TradeJoinResponse,
@@ -25,18 +26,7 @@ export class TradeError extends DomainError {}
 type PetWithSpecies = Pet & { species: Species | null };
 type Tx = Prisma.TransactionClient;
 
-function toTradePetView(pet: PetWithSpecies): TradePetView {
-  if (!pet.species) {
-    throw new TradeError('3차 성체가 아닌 개체는 교환할 수 없습니다.');
-  }
-  return {
-    id: pet.id,
-    speciesName: pet.species.name,
-    eggType: pet.eggType,
-    combo: pet.species.combo,
-    isAlbino: pet.isAlbino,
-  };
-}
+
 
 function randomCode(): string {
   let code = '';

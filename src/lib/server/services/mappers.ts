@@ -61,5 +61,6 @@ export function toTradePetView(pet: PetWithSpecies): TradePetView {
     eggType: pet.eggType as EggType,
     combo: pet.species.combo as Combo,
     isAlbino: pet.isAlbino,
+    isTraded: pet.isTraded,
   };
 }

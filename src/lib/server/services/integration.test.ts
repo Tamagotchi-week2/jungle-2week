@@ -91,6 +91,28 @@ async function raiseToAdult(userId: string, eggType: 'air' | 'land' = 'air') {
 
 suite('서비스 계층 통합', () => {
   beforeAll(async () => {
+    // 설정만 믿지 않고 격리를 실증한다.
+    //
+    // 이 스위트는 users·pets·trades 를 통째로 비운다. 개발 DB 에 붙어 있으면
+    // 팀 데이터가 날아간다. 실제로 env 덮어쓰기가 무효화되어 그런 사고가 있었다.
+    // 그래서 지우기 전에 "쓴 것이 격리 스키마에 들어갔는지"를 직접 확인한다.
+    const marker = `__isolation_check_${Date.now()}`;
+    const probe = await db.user.create({
+      data: { nickname: marker, passwordHash: 'x' },
+    });
+    const landed = await db.$queryRawUnsafe<{ n: number }[]>(
+      `SELECT count(*)::int AS n FROM test_integration.users WHERE nickname = $1`,
+      marker,
+    );
+    await db.user.delete({ where: { id: probe.id } });
+
+    if (landed[0].n !== 1) {
+      throw new Error(
+        '통합 테스트가 격리 스키마(test_integration)에 붙어 있지 않다. ' +
+          '이대로 진행하면 개발 DB 의 데이터를 지운다. TEST_DATABASE_URL 설정을 확인할 것.',
+      );
+    }
+
     // species 마스터가 없으면 성체 진화가 실패한다.
     // 원격 DB 왕복이 느려 24회 순차 upsert 는 훅 타임아웃을 넘긴다. 한 번에 넣는다.
     await db.species.createMany({
