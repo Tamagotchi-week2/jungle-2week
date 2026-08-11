@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+
+import { useMe } from "../MeContext";
 import type { FarmStateResponse, HarvestResponse } from "@/types/api";
 
 function formatTime(seconds: number) {
@@ -12,6 +14,7 @@ function formatTime(seconds: number) {
 }
 
 export default function FarmScene() {
+  const { refresh } = useMe();
   const [state, setState] = useState<FarmStateResponse | null>(null);
   const [feedback, setFeedback] = useState<string>("");
   const [loading, setLoading] = useState(false);
@@ -70,6 +73,8 @@ export default function FarmScene() {
       const result = payload as HarvestResponse;
       setFeedback(`Harvest complete! Gained ${result.gained} crop.`);
       await refreshState();
+      // 자원이 늘었으므로 상단 HUD 도 갱신한다
+      await refresh();
     }
     setLoading(false);
   }

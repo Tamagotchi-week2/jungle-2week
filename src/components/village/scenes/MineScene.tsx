@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+
+import { useMe } from "../MeContext";
 import type { MineFinishResponse, MineStartResponse } from "@/types/api";
 
 const CLICK_TARGET = 35;
 
 export default function MineScene() {
+  const { refresh } = useMe();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [clicks, setClicks] = useState(0);
   const [target, setTarget] = useState(CLICK_TARGET);
@@ -65,6 +68,7 @@ export default function MineScene() {
 
     setStatus("Mine complete!");
     setFeedback(`Gained ${payload.gained} mineral.`);
+    await refresh();
   }
 
   useEffect(() => {

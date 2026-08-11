@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { VillageScene } from "./types";
 import type {
   FarmStateResponse,
@@ -17,6 +17,7 @@ import {
   VILLAGE_MAP,
 } from "./constants";
 import { buildingSprite, playerSprite, type Direction } from "@/lib/sprites";
+import { useMe } from "./MeContext";
 
 const DIRECTION_VECTORS = {
   up: { dx: 0, dy: -1 },
@@ -54,6 +55,13 @@ function getFarmElapsedSeconds(plantedAt: string) {
 }
 
 export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps) {
+  const { refresh } = useMe();
+  // 연타 수는 ref 로 센다. 키 입력이 한 프레임에 몰리면 state 는 갱신 전 값을 보게 되어
+  // 목표치에 영원히 도달하지 못하거나 중복 완료가 발생한다.
+  const mineClickRef = useRef(0);
+  // 완료 요청은 세션당 1회. 목표 도달 후에도 계속 누르면 같은 세션을 반복 전송해
+  // 서버가 "이미 처리된 세션"으로 400 을 돌려주고 성공 메시지를 덮어쓴다.
+  const mineCompletingRef = useRef(false);
   const [playerPosition, setPlayerPosition] = useState(MAP_START);
   const [facing, setFacing] = useState<Facing>("down");
   const [walkFrame, setWalkFrame] = useState<0 | 1>(0);
@@ -149,6 +157,8 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
       const result = payload as HarvestResponse;
       setFarmFeedback(`Harvest complete! Gained ${result.gained} crop.`);
       await refreshFarmState();
+      // 자원이 늘었으므로 상단 HUD 도 갱신한다
+      await refresh();
     }
     setFarmLoading(false);
   }
@@ -157,6 +167,8 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
     if (mineLoading) {
       return;
     }
+    mineClickRef.current = 0;
+    mineCompletingRef.current = false;
     setMineLoading(true);
     setMineFeedback("Starting mine session...");
 
@@ -197,6 +209,8 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
     setMineSessionId(null);
     setMineClicks(0);
     setMineTarget(MINE_CLICK_TARGET);
+    mineClickRef.current = 0;
+    mineCompletingRef.current = false;
 
     if (!response.ok || !payload.success) {
       setMineStatus("Mine failed.");
@@ -206,6 +220,7 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
 
     setMineStatus("Mine complete!");
     setMineFeedback(`Gained ${payload.gained} mineral.`);
+    await refresh();
   }
 
   function handleFacilityInteraction(scene: VillageScene) {
@@ -226,13 +241,17 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
         return;
       }
 
-      setMineClicks((current) => {
-        const nextCount = Math.min(mineTarget, current + 1);
-        if (nextCount === mineTarget) {
-          completeMine(nextCount);
-        }
-        return nextCount;
-      });
+      if (mineCompletingRef.current) {
+        return;
+      }
+
+      mineClickRef.current += 1;
+      setMineClicks(Math.min(mineTarget, mineClickRef.current));
+
+      if (mineClickRef.current >= mineTarget) {
+        mineCompletingRef.current = true;
+        completeMine(mineClickRef.current);
+      }
       return;
     }
 
@@ -325,15 +344,15 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
     : FARM_ICON_BY_STATE.empty;
 
   return (
-    <div className="relative h-full w-full overflow-hidden">
+    <div className="village-stage grid h-full w-full place-items-center overflow-hidden">
+      {/* 배경과 격자를 같은 상자에 담아야 시설 좌표가 그림과 어긋나지 않는다 */}
       <div
-        className="absolute inset-0 bg-cover bg-center"
+        className="village-fit relative bg-cover bg-center"
         style={{
           backgroundImage: "url('/sprites/backgrounds/village.png')",
           imageRendering: "pixelated",
         }}
-      />
-      <div className="relative aspect-[15/11] w-full">
+      >
         {VILLAGE_MAP.flatMap((row, y) =>
           row.map((cell, x) => {
             const facility = cell.facility ? FACILITY_BY_TYPE[cell.facility] : null;

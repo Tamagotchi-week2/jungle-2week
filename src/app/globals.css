@@ -11,7 +11,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-pixel), var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
@@ -129,3 +129,127 @@ button {
 .guestbook-notice { border:2px dashed #8a6a42 !important; border-radius:0 !important; background:#d8c18d !important; box-shadow:3px 3px 0 rgba(78,50,29,.38) !important; }.guestbook-count,.guestbook-mine { border:2px solid #765437; border-radius:0 !important; background:#c5b477 !important; box-shadow:2px 2px 0 rgba(78,50,29,.44); }
 .guestbook-entry { position:relative; border:3px solid #805c39 !important; border-radius:0 !important; background:#f3e3bd !important; box-shadow:4px 4px 0 #745135 !important; transition:transform .1s,background-color .1s; }.guestbook-entry::before { content:""; position:absolute; top:0; right:0; width:11px; height:11px; border-bottom:2px solid #b99866; border-left:2px solid #b99866; background:#e5cea1; }.guestbook-entry:hover { background:#f8eaca !important; transform:translateY(-1px); }.guestbook-entry p { color:#46301e !important; }.guestbook-entry .text-xs { color:#856644 !important; }
 @media (max-width:640px) { .guestbook-board > div:nth-child(2) { right:12%; left:12%; }.guestbook-panel { padding:1.1rem !important; }.guestbook-entry { box-shadow:3px 3px 0 #745135 !important; } }
+
+/* 마을 화면 크기 맞춤.
+   맵은 15:11 비율을 유지하면서 화면(스테이지) 안에 완전히 들어가야 한다.
+   가로만 꽉 채우면(w-full) 넓은 화면에서 세로가 넘쳐 스크롤이 생긴다.
+
+   컨테이너 쿼리 단위(cqh)로 스테이지 높이를 읽어, 비율을 지킨 폭과
+   실제 폭 중 작은 쪽을 택한다. 결과적으로 가로가 넓으면 높이에,
+   세로가 짧으면 폭에 맞춰지고 남는 공간은 여백이 된다. */
+.village-stage {
+  container-type: size;
+}
+
+.village-fit {
+  aspect-ratio: 15 / 11;
+  width: min(100%, calc(100cqh * 15 / 11));
+
+}
+
+/* 로그인 화면 — 다마고치 등장 연출 (17.1) */
+
+/*
+ * "키링이 떨어지는" 연출 — 체인 맨 위 고리는 고정된 지점이고, 그 아래(남은 체인 +
+ * 달걀)가 하나의 진자로서 그 고정점을 중심으로 회전한다. 옆으로 치우친 각도에서
+ * 시작해(장력을 받아 당겨진 상태) 진폭이 점점 줄어드는 감쇠 진동을 거쳐 정면(0deg)
+ * 에 멈춘다. 위치 이동이 아니라 회전만 쓰는 게 핵심 — 그래야 "고리는 고정, 달걀만
+ * 옆에서 흔들리며 떨어짐"이 표현된다. TamagotchiShell 에서 transform-origin 을
+ * 고리 바로 아래(회전축)에 둔 래퍼에 건다.
+ *
+ * 각도가 클수록 회전축 기준 수직 길이가 짧아 보인다(cos(각도)만큼 짧아짐 — 순수
+ * 삼각함수 눈속임). 진폭이 줄어들며 0deg 에 다가갈수록 실제 길이만큼 늘어져
+ * "전체적으로 조금씩 가라앉는" 것처럼 보이는 원인이 이거다. 이동이 아니라
+ * 회전이 만드는 착시라 완전히 없앨 수는 없지만, 최대 각도를 낮추면 cos 값
+ * 차이가 작아져 가라앉는 정도가 눈에 띄게 줄어든다 (58deg → 34deg 로 낮추면
+ * cos 차이가 0.47 에서 0.17 로, 대략 1/3 수준으로 준다).
+ */
+@keyframes keyring-pendulum-swing {
+  0% {
+    transform: rotate(-34deg);
+    opacity: 0;
+  }
+  6% {
+    opacity: 1;
+  }
+  20% {
+    transform: rotate(24deg);
+  }
+  36% {
+    transform: rotate(-16deg);
+  }
+  50% {
+    transform: rotate(10deg);
+  }
+  64% {
+    transform: rotate(-6deg);
+  }
+  78% {
+    transform: rotate(3deg);
+  }
+  90% {
+    transform: rotate(-1deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+@keyframes tamagotchi-screen-flicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  8% {
+    opacity: 0.15;
+  }
+  16% {
+    opacity: 1;
+  }
+  26% {
+    opacity: 0.25;
+  }
+  40% {
+    opacity: 1;
+  }
+  55% {
+    opacity: 0.1;
+  }
+  70% {
+    opacity: 1;
+  }
+}
+
+@keyframes tamagotchi-content-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes tamagotchi-boot-blink {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(0.82);
+    opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+}

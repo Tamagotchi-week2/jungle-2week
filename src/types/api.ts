@@ -175,9 +175,17 @@ export interface FishCastResponse {
   biteDelayMs: number;
 }
 
-/** 어업 판정 — 클라이언트는 입력했다는 사실만 보내고 판정은 서버가 한다 */
+/**
+ * 어업 판정.
+ *
+ * 반응시간은 **클라이언트가 로컬에서 잰다**. 서버가 요청 도착 시각으로 재면
+ * 왕복 지연이 반응시간에 그대로 더해져, 화면상 제때 눌러도 실패한다.
+ * 서버는 이 값이 물리적으로 가능한 시각에 도착했는지만 검증한다.
+ */
 export interface FishStrikeRequest {
   sessionId: string;
+  /** 입질 표시부터 입력까지 걸린 시간(ms). 클라이언트 측정값 */
+  reactionMs: number;
 }
 export interface FishStrikeResponse {
   success: boolean;
