@@ -5,6 +5,7 @@ import type { Prisma } from '@/generated/prisma';
 
 import { db } from '@/lib/server/db';
 import { DomainError } from '@/lib/server/errors';
+import { registerSpecies } from '@/lib/server/services/dex';
 import type {
   TradeCreateResponse,
   TradeJoinResponse,
@@ -162,20 +163,6 @@ export async function joinTrade(
   });
 }
 
-async function registerDexEntry(tx: Tx, userId: string, pet: PetWithSpecies) {
-  if (!pet.speciesId) return;
-  await tx.dexEntry.upsert({
-    where: { userId_speciesId: { userId, speciesId: pet.speciesId } },
-    create: {
-      userId,
-      speciesId: pet.speciesId,
-      hasNormal: !pet.isAlbino,
-      hasAlbino: pet.isAlbino,
-    },
-    update: pet.isAlbino ? { hasAlbino: true } : { hasNormal: true },
-  });
-}
-
 /**
  * 제안자가 최종 수락 / 거절한다 (17.4 3·4단계).
  * 참여 시점과 수락 시점 사이에 개체 상태가 변할 수 있으므로 트랜잭션 직전에 재검증한다 (9장).
@@ -236,8 +223,11 @@ export async function resolveTrade(
       data: { ownerId: trade.fromUserId, isTraded: true, lockedByTradeId: null },
     });
 
-    await registerDexEntry(tx, trade.fromUserId, toPet);
-    await registerDexEntry(tx, toUserId, fromPet);
+    if (!toPet.speciesId || !fromPet.speciesId) {
+      throw new TradeError('3차 성체가 아닌 개체는 교환할 수 없습니다.');
+    }
+    await registerSpecies(tx, trade.fromUserId, toPet.speciesId, toPet.isAlbino);
+    await registerSpecies(tx, toUserId, fromPet.speciesId, fromPet.isAlbino);
 
     await tx.trade.update({
       where: { id: trade.id },

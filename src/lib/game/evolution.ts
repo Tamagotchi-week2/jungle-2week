@@ -7,6 +7,7 @@
  */
 
 import { BALANCE } from './constants';
+import { GameRuleError } from './errors';
 import type {
   Combo,
   EggType,
@@ -56,7 +57,7 @@ export function decideTrait(
 ): Trait {
   const max = Math.max(...TRAITS.map((t) => traits[t]));
   if (max === 0) {
-    throw new Error('먹인 기록이 없어 성향을 판정할 수 없다');
+    throw new GameRuleError('먹인 기록이 없어 성향을 판정할 수 없다');
   }
 
   const tied = TRAITS.filter((t) => traits[t] === max);
@@ -87,7 +88,7 @@ export function createEgg(eggType: EggType): PetEvolutionState {
  */
 export function hatch(state: PetEvolutionState, rng: Rng): PetEvolutionState {
   if (state.stage !== STAGE.EGG) {
-    throw new Error('알 상태에서만 부화할 수 있다');
+    throw new GameRuleError('알 상태에서만 부화할 수 있다');
   }
   return {
     ...state,
@@ -111,10 +112,10 @@ export function feed(
   trait: Trait,
 ): PetEvolutionState {
   if (state.stage !== STAGE.BABY && state.stage !== STAGE.TEEN) {
-    throw new Error('유아기·성장기에만 먹일 수 있다');
+    throw new GameRuleError('유아기·성장기에만 먹일 수 있다');
   }
   if (canEvolve(state)) {
-    throw new Error('이미 진화 조건을 채웠다. 진화 후 다시 먹일 수 있다');
+    throw new GameRuleError('이미 진화 조건을 채웠다. 진화 후 다시 먹일 수 있다');
   }
 
   const feedCount = state.feedCount + 1;
@@ -137,7 +138,7 @@ export function feed(
  */
 export function evolve(state: PetEvolutionState): PetEvolutionState {
   if (!canEvolve(state)) {
-    throw new Error('진화 조건을 채우지 못했다');
+    throw new GameRuleError('진화 조건을 채우지 못했다');
   }
 
   const decided = decideTrait(state.traits, state.lastFedSeq);
@@ -154,7 +155,7 @@ export function evolve(state: PetEvolutionState): PetEvolutionState {
   }
 
   if (state.stage2Trait === null) {
-    throw new Error('성장기 개체에 stage2Trait 가 없다');
+    throw new GameRuleError('성장기 개체에 stage2Trait 가 없다');
   }
 
   return {
