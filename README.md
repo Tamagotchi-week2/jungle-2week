@@ -41,6 +41,7 @@ npx prisma migrate dev
 | `npm test` | 진화 엔진 불변식 테스트 |
 | `npm run test:watch` | 테스트 워치 모드 |
 | `npm run lint` | ESLint |
+| `npm run verify` | **PR 전 필수** — 타입 체크 + 테스트 + 린트 일괄 |
 
 개발·시연 중에는 `.env` 에 `GAME_FAST_MODE=1` 을 넣어 성장 요구치를 25회 → 7회로 낮춘다.
 
@@ -92,7 +93,7 @@ public/sprites/           스프라이트
 ### 브랜치
 
 ```
-main            항상 초록불. 직접 push 금지
+main            항상 동작하는 상태 유지. 직접 push 금지
  └─ <담당자>/<작업>      예) a/feed-api, b/village-tilemap, c/auth-gate, d/dex-grid
 ```
 
@@ -106,7 +107,7 @@ main            항상 초록불. 직접 push 금지
 저장소 플랜 제약으로 브랜치 보호를 쓰지 않는다. 다음은 규칙으로 지킨다.
 
 - `main` 에 직접 push 하지 않는다. 항상 PR 을 거친다
-- 머지 전 Actions 탭에서 **CI 초록불을 확인**한다
+- **PR 올리기 전에 `npm run verify` 를 돌린다.** 타입·테스트·린트를 한 번에 검사한다
 - 남의 디렉토리를 건드린 PR 은 해당 담당자 리뷰를 받는다
 - `src/types/api.ts` 변경은 **단독 PR** 로 올리고 머지 후 팀에 알린다. 전원에게 영향이 간다
 
