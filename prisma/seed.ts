@@ -14,7 +14,7 @@ import { PrismaClient } from '../src/generated/prisma';
 import bcrypt from 'bcryptjs';
 
 import { SPECIES_LIST } from '../src/lib/game/species';
-import { BALANCE } from '../src/lib/game/constants';
+import { setupNewUser } from '../src/lib/server/services/user';
 
 const db = new PrismaClient();
 
@@ -50,23 +50,12 @@ async function seedTestAccounts() {
       create: { nickname: account.nickname, passwordHash },
     });
 
-    // 밭은 계정당 1구획 (FARM_PLOTS = 1)
-    const plots = await db.farmPlot.count({ where: { userId: user.id } });
-    if (plots < BALANCE.FARM_PLOTS) {
-      await db.farmPlot.create({ data: { userId: user.id } });
-    }
+    // 초기 알 가챠·밭·인벤토리는 가입 경로와 같은 함수를 쓴다.
+    // 여기서 따로 만들면 실제 가입과 상태가 달라져, 시드 계정으로만 재현되는
+    // 버그가 생긴다. 이미 받은 계정이면 다시 굴리지 않는다.
+    const eggs = await setupNewUser(user.id);
 
-    // 자원 3종 인벤토리 행을 미리 만들어 둔다.
-    // 없으면 채집·급여마다 존재 여부를 확인해야 해서 로직이 지저분해진다.
-    for (const resourceType of ['crop', 'mineral', 'seafood'] as const) {
-      await db.inventory.upsert({
-        where: { userId_resourceType: { userId: user.id, resourceType } },
-        update: {},
-        create: { userId: user.id, resourceType, count: 0 },
-      });
-    }
-
-    console.log(`account  : ${account.nickname} (${user.id})`);
+    console.log(`account  : ${account.nickname} (${user.id}) 알 ${eggs.join(', ')}`);
   }
 
   console.log('  비밀번호는 두 계정 모두 test1234 — 개발 전용이다');

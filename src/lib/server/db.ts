@@ -10,6 +10,19 @@
 
 import { PrismaClient } from '@/generated/prisma';
 
+/**
+ * 접속 대상 URL.
+ *
+ * process.env.DATABASE_URL 을 덮어쓰는 방식은 통하지 않는다. Prisma 클라이언트가
+ * 초기화 시 .env 를 다시 읽어 값을 되돌리기 때문이다. 실제로 통합 테스트가
+ * 격리 스키마 대신 개발 DB 를 지운 사고가 있었다.
+ *
+ * 그래서 별도 변수로 받아 datasourceUrl 에 **명시적으로** 넘긴다.
+ * 이 값은 Prisma 의 .env 로딩이 건드리지 않는다.
+ */
+const datasourceUrl =
+  process.env.PRISMA_DATASOURCE_URL_OVERRIDE ?? process.env.DATABASE_URL;
+
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
@@ -17,6 +30,7 @@ const globalForPrisma = globalThis as unknown as {
 export const db =
   globalForPrisma.prisma ??
   new PrismaClient({
+    datasourceUrl,
     log:
       process.env.NODE_ENV === 'development'
         ? ['query', 'warn', 'error']

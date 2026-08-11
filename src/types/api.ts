@@ -213,6 +213,8 @@ export interface TradePetView {
   eggType: EggType;
   combo: Combo;
   isAlbino: boolean;
+  /** 이미 교환한 개체인가. 개체당 1회 한정이므로 다시 걸 수 없다 (9장) */
+  isTraded: boolean;
 }
 
 /** 내 성체를 걸고 코드를 발급한다 */
