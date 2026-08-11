@@ -1,11 +1,11 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0b1224;
-  --foreground: #e2e8f0;
-  --surface: #0f172a;
-  --surface-strong: #111826;
-  --border: #334155;
+  --background: #f9f8f5;
+  --foreground: #111827;
+  --surface: #ffffff;
+  --surface-strong: #edf0f5;
+  --border: #c1bfb9;
 }
 
 @theme inline {
@@ -58,3 +58,56 @@ button {
   background: #f8b40033;
   color: var(--background);
 }
+
+.village-bg-frame {
+  pointer-events: none;
+}
+
+.dex-forest-bg {
+  background-image: radial-gradient(circle at 15% 10%, rgba(168, 223, 161, 0.28), transparent 12%),
+    radial-gradient(circle at 80% 15%, rgba(90, 162, 102, 0.14), transparent 18%),
+    linear-gradient(180deg, #2d5d2f 0%, #18321a 42%, #0d180d 100%);
+}
+
+.village-bg-board {
+  background-image: radial-gradient(circle at top left, rgba(255,255,255,0.08), transparent 35%),
+    linear-gradient(180deg, rgba(88,59,40,0.16), rgba(11,16,29,0.92));
+  border: 1px solid rgba(148, 113, 68, 0.45);
+  box-shadow: inset 0 0 0 2px rgba(255,255,255,0.04);
+}
+
+.village-bg-strap {
+  background-image: linear-gradient(90deg, rgba(156,108,70,0.95), rgba(85,58,39,0.96));
+  box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+}
+
+.village-bg-accent {
+  background-image: linear-gradient(135deg, rgba(103,69,40,0.25), rgba(15,21,33,0.9));
+  opacity: 0.8;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03);
+}
+
+.dex-book-bg { min-height: 100vh; padding: clamp(1rem, 4vw, 3rem); color: #372615; background: radial-gradient(ellipse at center, #817051 0 20%, transparent 61%), linear-gradient(120deg, #344030, #182219); }
+.dex-book-shell { position: relative; width: min(100%, 1200px); min-height: min(760px, calc(100vh - 2rem)); margin: auto; display: grid; place-items: center; padding: 1.4rem 1rem 4.25rem; }
+.dex-book-pages { position: relative; z-index: 1; width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) 22px minmax(0, 1fr); filter: drop-shadow(0 26px 17px rgba(0,0,0,.35)); }
+.dex-book-page { position: relative; min-width: 0; padding: clamp(1rem, 2.4vw, 2rem); overflow: hidden; background-color: #f2e6c8; background-image: radial-gradient(ellipse at 25% 12%, rgba(255,255,255,.75), transparent 24%), radial-gradient(circle, rgba(94,67,34,.10) .7px, transparent .9px), linear-gradient(100deg, #e3d1ad, #fbf4df 17%, #f7efd7 86%, #dfcba5); background-size: auto, 13px 13px, auto; border: 2px solid #70502d; box-shadow: inset 0 0 0 3px rgba(255,255,255,.4), inset 0 0 32px rgba(91,62,27,.18); }
+.dex-book-left-page { border-radius: 17px 4px 4px 18px; box-shadow: inset -13px 0 22px rgba(74,42,16,.25), inset 0 0 0 3px rgba(255,255,255,.4), inset 0 0 32px rgba(91,62,27,.18); }
+.dex-book-right-page { border-radius: 4px 17px 18px 4px; box-shadow: inset 13px 0 22px rgba(74,42,16,.25), inset 0 0 0 3px rgba(255,255,255,.4), inset 0 0 32px rgba(91,62,27,.18); }
+.dex-book-spine { z-index: 2; margin: 0 -1px; background: linear-gradient(90deg, #4e301a, #b88a51 28%, #e2be7b 50%, #79502b 72%, #3d2516); box-shadow: inset 2px 0 4px rgba(0,0,0,.45), inset -2px 0 4px rgba(0,0,0,.45); }
+.dex-book-cover-detail { position: absolute; z-index: 0; bottom: 1.2rem; width: calc(100% - 1rem); height: 5rem; border: 4px solid #301d10; border-radius: 0 0 18px 18px; background: repeating-linear-gradient(0deg, #4a2d19 0 5px, #7c4b25 6px 8px), linear-gradient(#9c6335, #3b2415); box-shadow: 0 24px 30px rgba(0,0,0,.4), inset 0 2px #c58d4c; }
+.dex-book-bookmark { position: absolute; z-index: 3; right: 1.8rem; top: 6%; padding: .8rem .45rem 1.8rem; color: #ffe9a8; font-size: .68rem; font-weight: 800; letter-spacing: .16em; writing-mode: vertical-rl; background: linear-gradient(90deg, #70400f, #bd8128, #6c3b0f); border: 2px solid #43250e; text-shadow: 1px 1px #44250c; clip-path: polygon(0 0,100% 0,100% 91%,50% 100%,0 91%); }
+.dex-book-title-card { position: relative; z-index: 1; margin-bottom: 1rem; padding: .65rem; border: 2px solid #73502c; background: rgba(218,196,151,.66); box-shadow: inset 0 0 0 2px #f9edce; }
+.dex-book-title-panel { padding: .7rem; border: 1px solid #9d7a49; background: rgba(255,248,224,.5); }
+.dex-book-kicker { margin: 0; color: #6d4a25; font-size: .64rem; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
+.dex-book-completion { margin: .2rem 0 0; color: #392514; font-size: clamp(1.4rem,3vw,2.15rem); font-weight: 800; line-height: 1; }
+.dex-book-group-list { display: grid; grid-template-columns: repeat(2,1fr); gap: .25rem .55rem; margin-top: .38rem; color: #5d4228; font-size: .68rem; font-weight: 700; }
+.dex-book-grid { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: clamp(.42rem, 1.2vw, .75rem); }
+.dex-book-slot { position: relative; min-width: 0; padding: .28rem; text-align: left; color: #422a16; border: 2px solid #6f4b29; background: linear-gradient(135deg, #b98c50, #f5dd9d 16%, #c79450); box-shadow: inset 0 0 0 2px #f8e7b2, 2px 3px 0 rgba(71,43,20,.38); transition: transform .15s, filter .15s; }
+.dex-book-slot:hover { transform: translate(-1px,-2px); filter: brightness(1.08); }.dex-book-slot:focus-visible { outline: 3px solid #f5c958; outline-offset: 2px; }
+.dex-book-slot-image { position: relative; aspect-ratio: 1; overflow: hidden; border: 2px solid #55391f; background: #d5c39a; }.dex-book-slot-image img { width: 100%; height: 100%; object-fit: cover; display:block; }
+.dex-dotted-paper::after { content:""; position:absolute; inset:0; pointer-events:none; background-image: radial-gradient(rgba(83,54,25,.16) .7px, transparent .8px); background-size: 6px 6px; mix-blend-mode:multiply; }
+.dex-book-slot-number { position:absolute; z-index:2; top:0; left:0; padding: .08rem .22rem; color:#fff1bd; font-size:.55rem; font-weight:800; background:#54351c; }.dex-book-slot-name { display:block; overflow:hidden; margin-top:.25rem; font-size:clamp(.52rem,1.2vw,.69rem); font-weight:800; line-height:1.05; text-overflow:ellipsis; white-space:nowrap; }.dex-book-slot-mask,.dex-book-portrait-mask { position:absolute; inset:0; z-index:1; display:grid; place-items:center; padding:.35rem; color:#d7d0bb; font-size:.7rem; font-weight:800; letter-spacing:.12em; text-align:center; text-transform:uppercase; background:rgba(53,56,49,.83); }.dex-book-slot-locked { filter:grayscale(1); }.dex-book-slot-locked .dex-book-slot-image img { opacity:.23; }.dex-book-slot-selected { border-color:#f9d461; box-shadow: inset 0 0 0 2px #fff6cc, 0 0 0 3px #75461c, 3px 4px 0 rgba(71,43,20,.42); transform:translateY(-2px); }.dex-book-slot-albino { border-color:#c18627; }.dex-book-albino-mark { position:absolute; z-index:3; right:-.28rem; bottom:1rem; width:1rem; height:1rem; display:grid; place-items:center; color:#fff3bc; font-size:.72rem; background:#a26919; border:1px solid #5d3913; border-radius:50%; }
+.dex-book-detail { position:relative; z-index:1; display:flex; min-height:100%; flex-direction:column; gap:1rem; }.dex-book-detail-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; padding-bottom:.65rem; border-bottom:2px solid rgba(109,74,37,.35); }.dex-book-detail-heading h2 { margin:.2rem 0 0; color:#362112; font-size:clamp(1.35rem,3vw,2.3rem); line-height:1.05; letter-spacing:-.04em; }.dex-book-type-badge { padding:.38rem .55rem; color:#4c2f14; font-size:.68rem; font-weight:900; letter-spacing:.12em; text-transform:uppercase; border:2px solid #745026; background:#e3bd71; box-shadow:inset 0 0 0 2px #f8e5a9; }
+.dex-book-portrait-frame { width:min(100%,320px); margin:0 auto; padding:.55rem; border:3px solid #6d4a28; background:linear-gradient(135deg,#b6813f,#f5d996,#8b5829); box-shadow:inset 0 0 0 3px #f4e0ac, 3px 4px 0 rgba(75,46,19,.25); }.dex-book-portrait { position:relative; height:clamp(170px,26vw,265px); perspective:1000px; overflow:hidden; border:2px solid #50351d; background:#d4c496; }.dex-book-portrait-flip { width:100%; height:100%; position:relative; transform-style:preserve-3d; transition:transform .7s; }.dex-book-portrait-face { position:absolute; inset:0; backface-visibility:hidden; -webkit-backface-visibility:hidden; }.dex-book-portrait-face img { width:100%; height:100%; display:block; object-fit:cover; }.dex-book-portrait-back { transform:rotateY(180deg); }
+.dex-book-detail-copy { padding:.8rem .95rem; color:#53391f; font-size:clamp(.75rem,1.5vw,.9rem); line-height:1.7; border-top:1px dashed #a5804c; border-bottom:1px dashed #a5804c; }.dex-book-detail-copy p { margin:0; }.dex-book-detail-copy p + p { margin-top:.35rem; }.dex-book-albino-button { width:100%; margin-top:auto; padding:.7rem 1rem; color:#fff0bf; font-size:.78rem; font-weight:900; letter-spacing:.12em; border:2px solid #523215; background:linear-gradient(#9b6026,#654019); box-shadow:inset 0 0 0 2px rgba(255,225,160,.25), 0 3px 0 #43260f; transition:filter .15s,transform .15s; }.dex-book-albino-button:hover:not(:disabled) { filter:brightness(1.16); transform:translateY(-1px); }.dex-book-albino-button:disabled { color:#9a886d; background:#706653; box-shadow:inset 0 0 0 2px rgba(255,255,255,.15); cursor:not-allowed; }.dex-book-page-number { position:absolute; z-index:1; bottom:.7rem; right:1.1rem; color:#8a653c; font-size:.67rem; font-weight:900; letter-spacing:.14em; }
+@media (max-width: 720px) { .dex-book-bg { padding:.7rem; }.dex-book-shell { min-height:0; padding:.5rem .25rem 2.7rem; }.dex-book-pages { grid-template-columns:1fr; gap:0; }.dex-book-spine { height:16px; margin:-1px 7% -1px; background:linear-gradient(#3d2514,#d0a260 52%,#422713); }.dex-book-page { padding:1rem; }.dex-book-left-page { border-radius:14px 14px 4px 4px; }.dex-book-right-page { border-radius:4px 4px 14px 14px; }.dex-book-cover-detail { height:3rem; bottom:.25rem; }.dex-book-bookmark { right:.75rem; top:1.5rem; }.dex-book-portrait { height:min(58vw,250px); } }
