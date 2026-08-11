@@ -368,8 +368,10 @@ export default function HouseScene() {
           combo: result.pet.combo,
           speciesName: result.pet.speciesName,
         });
+        // 스스로 닫지 않는다. 성체 완성은 한 마리에 한 번뿐인 순간이라,
+        // 다른 곳을 보고 있는 사이에 지나가 버리면 다시 볼 방법이 없다.
+        // 확인 버튼을 눌러야만 닫힌다.
         setCelebrating(true);
-        window.setTimeout(() => setCelebrating(false), 2400);
       }
       await refresh();
     }
@@ -665,7 +667,12 @@ export default function HouseScene() {
           style={{ left: touchPoint.x, top: touchPoint.y, imageRendering: "pixelated" }}
         />
       ) : null}
-      <Modal open={celebrating && lastAdultPet !== null} onClose={() => setCelebrating(false)}>
+      <Modal
+        open={celebrating && lastAdultPet !== null}
+        onClose={() => setCelebrating(false)}
+        closeOnBackdrop={false}
+        closeOnEscape={false}
+      >
         <div className="evolution-celebrate">
           <p className="evolution-celebrate-kicker">최종 성장 완료</p>
           <h2 className="evolution-celebrate-title">{lastAdultPet?.speciesName ?? STAGE_NAME[FINAL_GROWTH_STAGE]}</h2>
@@ -690,7 +697,13 @@ export default function HouseScene() {
 
       {/* 알 획득 연출. 성체 완성 연출과 같은 틀을 쓴다 — 둘 다 "받았다"는 것을
           알리는 같은 성격의 순간이고, 생김새가 갈리면 오히려 산만하다. */}
-      <Modal open={rewardReveal !== null} onClose={closeRewardReveal}>
+      <Modal
+        open={rewardReveal !== null}
+        onClose={closeRewardReveal}
+        // 알 획득도 같다. 변신을 보기 전에 실수로 닫히면 연출이 날아간다.
+        closeOnBackdrop={false}
+        closeOnEscape={false}
+      >
         {rewardReveal ? (
           <div className="evolution-celebrate">
             <p className="evolution-celebrate-kicker">알 획득</p>
