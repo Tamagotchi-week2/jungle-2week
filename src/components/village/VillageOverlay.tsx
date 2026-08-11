@@ -2,8 +2,6 @@ import type { VillageScene } from "./types";
 import DexScene from "./scenes/DexScene";
 import HouseScene from "./scenes/HouseScene";
 import MailboxScene from "./scenes/MailboxScene";
-import MineScene from "./scenes/MineScene";
-import FarmScene from "./scenes/FarmScene";
 import ShoreScene from "./scenes/ShoreScene";
 import TradeSceneContainer from "./scenes/TradeSceneContainer";
 
@@ -23,10 +21,8 @@ export default function VillageOverlay({ activeScene, onClose }: VillageOverlayP
         return <HouseScene />;
       case "mailbox":
         return <MailboxScene />;
-      case "farm":
-        return <FarmScene />;
-      case "mine":
-        return <MineScene />;
+      // 논·광산은 오버레이 없이 마을 필드에서 바로 진행한다 (설계 17.3).
+      // 여기로 오는 경로는 없다.
       case "shore":
         return <ShoreScene />;
       case "dex":

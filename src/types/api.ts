@@ -158,13 +158,23 @@ export interface MineStartResponse {
   clickTarget: number;
 }
 
-/** 광산 완료 — 서버가 최소 소요 시간 하한을 검증한다 */
+/**
+ * 광산 완료.
+ *
+ * 판정은 클라이언트가 로컬에서 내리고(`judgeMine`), 서버가 같은 규칙으로 다시
+ * 확인한 뒤 지급한다. 소요 시간을 클라이언트가 재는 이유는 서버 시각으로 재면
+ * mine/start 왕복이 포함되어 자동 연타에 그만큼 관대해지기 때문이다.
+ */
 export interface MineFinishRequest {
   sessionId: string;
   clicks: number;
+  /** 연타 준비부터 목표 도달까지 걸린 시간(ms). 클라이언트 측정값 */
+  elapsedMs: number;
 }
 export interface MineFinishResponse {
   success: boolean;
+  /** 실패 사유. not_enough = 횟수 미달, too_fast = 자동 연타 의심 */
+  reason?: 'not_enough' | 'too_fast';
   gained: number;
   resources: Record<ResourceType, number>;
 }
