@@ -9,7 +9,7 @@ const FAST = process.env.GAME_FAST_MODE === '1';
 
 export const BALANCE = {
   /** 부화 시 알비노 발현 확률 */
-  HATCH_ALBINO_RATE: 0.01,
+  HATCH_ALBINO_RATE: 0.05,
 
   /** 보상 알이 금색으로 나올 확률 */
   GOLD_EGG_RATE: 0.1,
@@ -43,9 +43,10 @@ export const BALANCE = {
 
   /**
    * 광산: 목표 연타 수. 밸런스의 핵심 레버 (3.3장).
-   * 한 손 초당 5회 가정. 실측 연타 속도 R 기준 7 × R 로 재계산한다.
+   * 한 손 초당 5회 가정 시 35였으나, 실제 체감 피로도가 높아 20으로 낮춤.
+   * 산출량 대비 시간이 짧아진 만큼 분당 산출은 기존보다 늘어난다.
    */
-  MINE_CLICK_TARGET: 35,
+  MINE_CLICK_TARGET: 20,
   MINE_YIELD: 1,
   /** 광산: 서버 검증용 연타당 최소 소요 시간(ms) */
   MINE_MIN_MS_PER_CLICK: 80,
