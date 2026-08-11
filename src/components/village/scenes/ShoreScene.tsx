@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+
+import { useMe } from "../MeContext";
 import type { FishCastResponse, FishStrikeResponse } from "@/types/api";
 
 const QTE_WINDOW_MS = 700;
@@ -11,6 +13,7 @@ function formatTime(seconds: number) {
 }
 
 export default function ShoreScene() {
+  const { refresh } = useMe();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [state, setState] = useState<"idle" | "casting" | "bite" | "result">("idle");
   const [biteDelayMs, setBiteDelayMs] = useState<number>(0);
@@ -80,6 +83,7 @@ export default function ShoreScene() {
       setState("result");
       setMessage("Success! Fish caught.");
       setFeedback(`Gained ${payload.gained} seafood.`);
+      await refresh();
       return;
     }
 
