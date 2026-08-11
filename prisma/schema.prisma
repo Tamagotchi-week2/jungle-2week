@@ -71,7 +71,6 @@ model User {
   // 이미 존재하는데 open 이 다시 호출되면 재롤하지 않고 이 값을 그대로 쓴다.
   pendingRewardIsGold Boolean? @map("pending_reward_is_gold")
 
-  tutorialStep Int      @default(0) @map("tutorial_step")
   createdAt    DateTime @default(now()) @map("created_at")
 
   eggs            UserEgg[]

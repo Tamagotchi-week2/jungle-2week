@@ -4,6 +4,7 @@ import type { Pet, Species, TradeStatus } from '@/generated/prisma';
 import type { Prisma } from '@/generated/prisma';
 
 import { db } from '@/lib/server/db';
+import { BALANCE } from '@/lib/game/constants';
 import { DomainError } from '@/lib/server/errors';
 import { registerSpecies } from '@/lib/server/services/dex';
 import type {
@@ -16,7 +17,8 @@ import type {
 /** 혼동되는 0/O, 1/I 를 제외한 대문자·숫자 (17.4) */
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const CODE_LENGTH = 6;
-const TRADE_CODE_TTL_MS = 10 * 60 * 1000;
+// 수치는 constants.ts 가 유일한 출처다 (원칙 3)
+const TRADE_CODE_TTL_MS = BALANCE.TRADE_CODE_TTL_MINUTES * 60 * 1000;
 
 export class TradeError extends DomainError {}
 

@@ -1,11 +1,13 @@
 import { db } from '@/lib/server/db';
+import { BALANCE } from '@/lib/game/constants';
 import { DomainError } from '@/lib/server/errors';
 import type { GuestbookEntryView, GuestbookListResponse } from '@/types/api';
 
-/** 설계 문서 17.6 제약 */
-const PAGE_SIZE = 50;
-const POST_COOLDOWN_MS = 60 * 1000;
-const MESSAGE_MAX_LENGTH = 200;
+// 설계 문서 17.6 제약. 수치는 constants.ts 가 유일한 출처다 (원칙 3).
+// 여기에 값을 다시 적으면 한쪽만 고쳤을 때 조용히 갈라진다.
+const PAGE_SIZE = BALANCE.GUESTBOOK_PAGE_SIZE;
+const POST_COOLDOWN_MS = BALANCE.GUESTBOOK_COOLDOWN_SECONDS * 1000;
+const MESSAGE_MAX_LENGTH = BALANCE.GUESTBOOK_MAX_LENGTH;
 
 export class GuestbookError extends DomainError {}
 

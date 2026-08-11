@@ -26,7 +26,6 @@ export interface ApiError {
 
 export interface MeResponse {
   nickname: string;
-  tutorialStep: number;
   /** 알 인벤토리 (종류별 개수) */
   eggs: Record<EggType, number>;
   /** 자원 인벤토리 */

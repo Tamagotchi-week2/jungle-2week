@@ -106,7 +106,6 @@ export async function getMeSnapshot(userId: string): Promise<MeResponse> {
       where: { id: userId },
       select: {
         nickname: true,
-        tutorialStep: true,
         pendingRewardIsGold: true,
       },
     }),
@@ -139,7 +138,6 @@ export async function getMeSnapshot(userId: string): Promise<MeResponse> {
 
   return {
     nickname: user.nickname,
-    tutorialStep: user.tutorialStep,
     eggs: eggCounts,
     resources: resourceCounts,
     activePet: activePet ? toPetView(activePet) : null,
