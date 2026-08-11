@@ -19,10 +19,16 @@ import type { EvolveResponse, FeedResponse, HatchResponse } from "@/types/api";
 
 const STAGE_NAME = ["알", "유아기", "성장기", "성체"] as const;
 
-const FEEDS: { type: ResourceType; label: string; trait: string; ring: string }[] = [
-  { type: "crop", label: "작물", trait: "a", ring: "hover:border-emerald-300" },
-  { type: "mineral", label: "광물", trait: "b", ring: "hover:border-amber-300" },
-  { type: "seafood", label: "어패", trait: "c", ring: "hover:border-sky-300" },
+const FEEDS: {
+  type: ResourceType;
+  label: string;
+  trait: string;
+  ring: string;
+  icon: string;
+}[] = [
+  { type: "crop", label: "작물", trait: "a", ring: "hover:border-emerald-300", icon: "/sprites/house/crop.png" },
+  { type: "mineral", label: "광물", trait: "b", ring: "hover:border-amber-300", icon: "/sprites/house/mineral.png" },
+  { type: "seafood", label: "어패", trait: "c", ring: "hover:border-sky-300", icon: "/sprites/house/seafood.png" },
 ];
 
 const EGG_LABEL: Record<EggType, string> = {
@@ -106,7 +112,14 @@ export default function HouseScene() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-6 text-slate-100">
       <section className="relative overflow-hidden rounded-[32px] border border-slate-700/80 bg-slate-950/95 shadow-[0_30px_90px_rgba(0,0,0,0.35)]">
-        <div className="absolute inset-0 bg-slate-950/75" />
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{
+            backgroundImage: "url('/sprites/house/bg.png')",
+            imageRendering: "pixelated",
+          }}
+        />
+        <div className="absolute inset-0 bg-slate-950/70" />
 
         <div className="relative space-y-6 p-6">
           {feedback ? (
@@ -194,13 +207,22 @@ export default function HouseScene() {
                   <button
                     key={f.type}
                     type="button"
-                    className={`relative h-20 w-24 rounded-[24px] border border-slate-700/90 bg-slate-900/90 p-2 text-sm transition hover:scale-105 ${f.ring} active:scale-95 disabled:cursor-not-allowed disabled:opacity-40`}
+                    className={`relative h-24 w-24 rounded-[24px] border border-slate-700/90 bg-slate-900/90 p-2 transition hover:scale-105 ${f.ring} active:scale-95 disabled:cursor-not-allowed disabled:opacity-40`}
                     onClick={() => feed(f.type)}
                     disabled={busy || resources[f.type] <= 0 || canEvolve}
+                    title={`${f.label} · 성향 ${f.trait}`}
                   >
-                    <span className="block font-semibold">{f.label}</span>
-                    <span className="block text-xs text-slate-400">성향 {f.trait}</span>
-                    <span className="absolute bottom-1 right-2 text-[10px] text-slate-300">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={f.icon}
+                      alt={f.label}
+                      className="h-12 w-full object-contain"
+                      style={{ imageRendering: "pixelated" }}
+                    />
+                    <span className="mt-1 block text-xs font-semibold">
+                      {f.label} · {f.trait}
+                    </span>
+                    <span className="absolute bottom-1 right-2 rounded-full bg-slate-950/90 px-1.5 text-[10px] text-slate-200">
                       {resources[f.type]}
                     </span>
                   </button>
