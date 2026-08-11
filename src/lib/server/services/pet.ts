@@ -8,6 +8,7 @@
 
 import { db } from '@/lib/server/db';
 import { BALANCE } from '@/lib/game/constants';
+import { GameRuleError } from '@/lib/game/errors';
 import {
   canEvolve as canEvolvePure,
   createEgg,
@@ -24,14 +25,6 @@ import type {
 } from '@/types/api';
 import { registerSpecies } from './dex';
 import { toEvolutionState, toPetView } from './mappers';
-
-/** 요청이 규칙에 어긋날 때. 라우트에서 400 으로 변환한다 */
-export class GameRuleError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'GameRuleError';
-  }
-}
 
 const RESOURCE_TYPES: readonly ResourceType[] = ['crop', 'mineral', 'seafood'];
 

@@ -11,7 +11,7 @@ import { SELECTABLE_EGG_TYPES, resolveRewardEgg, rollRewardEgg } from '@/lib/gam
 import type { EggType } from '@/lib/game/types';
 import { EGG_TYPES } from '@/lib/game/types';
 import type { RewardClaimResponse, RewardOpenResponse } from '@/types/api';
-import { GameRuleError } from './pet';
+import { GameRuleError } from '@/lib/game/errors';
 
 /**
  * 1단계 — 판정을 굴려 보관하고 선택지만 돌려준다.

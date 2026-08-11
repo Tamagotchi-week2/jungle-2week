@@ -19,7 +19,7 @@ import type {
   MineFinishResponse,
   MineStartResponse,
 } from '@/types/api';
-import { GameRuleError } from './pet';
+import { GameRuleError } from '@/lib/game/errors';
 
 const RESOURCE_TYPES: readonly ResourceType[] = ['crop', 'mineral', 'seafood'];
 
