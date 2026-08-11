@@ -21,6 +21,13 @@ export const db =
       process.env.NODE_ENV === 'development'
         ? ['query', 'warn', 'error']
         : ['error'],
+    // 대화형 트랜잭션의 기본 제한은 5초다. 논리적으로는 짧은 작업이라도
+    // 원격 DB(Neon) 왕복이 여러 번 겹치면 넘긴다. 실제로 "Transaction not found"
+    // 오류가 간헐적으로 났다. 교환·진화처럼 여러 쓰기를 묶는 곳이 특히 취약하다.
+    transactionOptions: {
+      maxWait: 10_000,
+      timeout: 20_000,
+    },
   });
 
 if (process.env.NODE_ENV !== 'production') {

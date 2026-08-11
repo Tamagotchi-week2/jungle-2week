@@ -127,7 +127,7 @@ export async function joinTrade(
   code: string,
   petId: string,
 ): Promise<TradeJoinResponse> {
-  return db.$transaction(async (tx) => {
+  const result = await db.$transaction(async (tx) => {
     const trade = await tx.trade.findUnique({
       where: { code },
       include: { fromPet: { include: { species: true } } },
@@ -139,8 +139,10 @@ export async function joinTrade(
       throw new TradeError('이미 처리된 교환 코드입니다.');
     }
     if (trade.expiresAt < new Date()) {
+      // 여기서 throw 하면 트랜잭션이 롤백되어 잠금 해제까지 취소된다.
+      // 개체가 영구히 묶이므로, 무효화를 커밋한 뒤 바깥에서 throw 한다.
       await invalidateTrade(tx, trade);
-      throw new TradeError('만료된 교환 코드입니다.');
+      return { expired: true } as const;
     }
     if (trade.fromUserId === userId) {
       throw new TradeError('자신이 제안한 교환에는 참여할 수 없습니다.');
@@ -158,11 +160,19 @@ export async function joinTrade(
     });
 
     return {
-      tradeId: updated.id,
-      theirPet: toTradePetView(trade.fromPet),
-      myPet: toTradePetView(pet),
-    };
+      expired: false,
+      value: {
+        tradeId: updated.id,
+        theirPet: toTradePetView(trade.fromPet),
+        myPet: toTradePetView(pet),
+      },
+    } as const;
   });
+
+  if (result.expired) {
+    throw new TradeError('만료된 교환 코드입니다.');
+  }
+  return result.value;
 }
 
 /**
@@ -174,7 +184,7 @@ export async function resolveTrade(
   tradeId: string,
   accept: boolean,
 ): Promise<TradeResolveResponse> {
-  return db.$transaction(async (tx) => {
+  const result = await db.$transaction(async (tx) => {
     const trade = await tx.trade.findUnique({
       where: { id: tradeId },
       include: {
@@ -191,16 +201,20 @@ export async function resolveTrade(
     if (trade.status !== 'joined' || !trade.toPet || !trade.toUserId) {
       throw new TradeError('아직 상대가 참여하지 않았거나 이미 처리된 교환입니다.');
     }
+    // 무효화 후 곧바로 throw 하면 트랜잭션이 롤백되어 잠금 해제까지 취소된다.
+    // 개체가 영구히 묶이므로, 무효화를 커밋한 뒤 바깥에서 throw 한다.
     if (trade.expiresAt < new Date()) {
       await invalidateTrade(tx, trade);
-      throw new TradeError('만료된 교환입니다.');
+      return { failed: '만료된 교환입니다.' } as const;
     }
 
     const { fromPet, toPet, toUserId } = trade;
     for (const pet of [fromPet, toPet]) {
       if (pet.stage !== 3 || pet.isTraded || pet.lockedByTradeId !== trade.id) {
         await invalidateTrade(tx, trade);
-        throw new TradeError('개체 상태가 변경되어 더 이상 교환할 수 없습니다.');
+        return {
+          failed: '개체 상태가 변경되어 더 이상 교환할 수 없습니다.',
+        } as const;
       }
     }
 
@@ -213,7 +227,7 @@ export async function resolveTrade(
         where: { id: trade.id },
         data: { status: 'rejected', resolvedAt: new Date() },
       });
-      return { status: 'rejected', received: null };
+      return { failed: null, value: { status: 'rejected' as const, received: null } } as const;
     }
 
     await tx.pet.update({
@@ -236,8 +250,16 @@ export async function resolveTrade(
       data: { status: 'accepted', resolvedAt: new Date() },
     });
 
-    return { status: 'accepted', received: toTradePetView(toPet) };
+    return {
+      failed: null,
+      value: { status: 'accepted' as const, received: toTradePetView(toPet) },
+    } as const;
   });
+
+  if (result.failed) {
+    throw new TradeError(result.failed);
+  }
+  return result.value;
 }
 
 export interface TradeStatusView {

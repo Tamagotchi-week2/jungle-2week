@@ -51,6 +51,25 @@ npm run db:seed             # 24종 마스터 + 테스트 계정 2개
 | `npm run db:seed` | 24종 마스터 + 테스트 계정 시드 |
 | `npm run db:reset` | DB 초기화 후 마이그레이션·시드 재실행 |
 
+### 통합 테스트
+
+`npm test` 는 기본적으로 순수 함수만 검증한다(1초 내외). 서비스 계층 통합 테스트는
+`TEST_DATABASE_URL` 이 설정된 경우에만 돈다.
+
+```bash
+# .env 에 추가 — DATABASE_URL 과 같은 DB, 스키마만 분리
+TEST_DATABASE_URL="<DATABASE_URL 과 동일>&schema=test_integration"
+
+# 최초 1회 테이블 생성
+DATABASE_URL="<위 값>" npx prisma migrate deploy
+```
+
+**개발 DB 를 가리키면 안 된다.** 테스트가 users·pets·trades 를 비우므로 팀 전체
+데이터가 날아간다. 두 값이 같으면 `vitest.setup.ts` 가 실행을 중단시킨다.
+
+통합 테스트는 트랜잭션·잠금·유니크 제약처럼 순수 함수 테스트가 볼 수 없는 것을
+검증한다. 실제로 교환 만료 시 잠금이 풀리지 않던 버그가 여기서 발견되었다.
+
 개발·시연 중에는 `.env` 에 `GAME_FAST_MODE=1` 을 넣어 성장 요구치를 25회 → 7회로 낮춘다.
 
 ## 구조
