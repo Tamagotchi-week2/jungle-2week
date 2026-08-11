@@ -80,6 +80,18 @@ export interface FeedResponse {
   canEvolve: boolean;
 }
 
+/**
+ * 보유한 성체 목록.
+ *
+ * `/api/me` 의 activePet 은 육성 중인 개체(stage < 3)만 담으므로,
+ * 교환 화면이 고를 대상은 여기서 받아야 한다.
+ */
+export interface AdultPetsResponse {
+  pets: TradePetView[];
+  /** 아직 교환하지 않은 개체 수. 교환 탭 노출 판단용 */
+  tradableCount: number;
+}
+
 export interface EvolveRequest {
   petId: string;
 }

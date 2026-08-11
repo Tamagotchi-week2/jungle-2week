@@ -19,12 +19,13 @@ import {
 import type { Combo, EggType, ResourceType, Trait } from '@/lib/game/types';
 import { RESOURCE_TRAIT, STAGE } from '@/lib/game/types';
 import type {
+  AdultPetsResponse,
   EvolveResponse,
   FeedResponse,
   HatchResponse,
 } from '@/types/api';
 import { registerSpecies } from './dex';
-import { toEvolutionState, toPetView } from './mappers';
+import { toEvolutionState, toPetView, toTradePetView } from './mappers';
 
 const RESOURCE_TYPES: readonly ResourceType[] = ['crop', 'mineral', 'seafood'];
 
@@ -222,4 +223,26 @@ export async function evolvePet(
       rewardAvailable: true,
     };
   });
+}
+
+/**
+ * 보유한 성체 목록.
+ *
+ * 교환 화면이 고를 대상이다. getMeSnapshot 의 activePet 은 육성 중인 개체만
+ * 담으므로(stage < 3) 성체는 여기서 따로 조회해야 한다.
+ *
+ * 이미 교환한 개체(isTraded)도 함께 내려준다. 목록에서 사라지면 유저는
+ * "왜 없지?" 하고 혼란스러워한다. 교환 불가라는 사실을 UI 에서 보여주는 편이 낫다.
+ */
+export async function listAdultPets(userId: string): Promise<AdultPetsResponse> {
+  const pets = await db.pet.findMany({
+    where: { ownerId: userId, stage: STAGE.ADULT },
+    include: { species: true },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  return {
+    pets: pets.map(toTradePetView),
+    tradableCount: pets.filter((p) => !p.isTraded && !p.lockedByTradeId).length,
+  };
 }

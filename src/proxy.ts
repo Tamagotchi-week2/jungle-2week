@@ -24,8 +24,16 @@ export default auth((req) => {
   return NextResponse.next();
 });
 
+/**
+ * `api` 전체를 제외한다. API 를 리다이렉트하면 클라이언트 fetch 가 401 대신
+ * 로그인 HTML(200)을 받아 res.json() 에서 파싱 에러로 죽는다. "로그인 만료"를
+ * 구분할 수도 없다.
+ *
+ * 제외해도 보호는 유지된다. 모든 API 라우트가 getCurrentUserId 를 거치며
+ * 미인증이면 401 JSON 을 반환한다.
+ */
 export const config = {
   matcher: [
-    '/((?!api/auth|_next/static|_next/image|favicon.ico|sprites|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico|sprites|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };
