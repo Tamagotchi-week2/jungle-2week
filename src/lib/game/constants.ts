@@ -9,7 +9,7 @@ const FAST = process.env.GAME_FAST_MODE === '1';
 
 export const BALANCE = {
   /** 부화 시 알비노 발현 확률 */
-  HATCH_ALBINO_RATE: 0.01,
+  HATCH_ALBINO_RATE: 0.05,
 
   /** 보상 알이 금색으로 나올 확률 */
   GOLD_EGG_RATE: 0.1,

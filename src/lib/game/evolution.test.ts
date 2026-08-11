@@ -174,9 +174,9 @@ describe('알비노', () => {
     expect(adult.isAlbino).toBe(false);
   });
 
-  it('확률 경계 — 0.01 미만에서만 발현한다', () => {
-    expect(hatch(createEgg('air'), () => 0.009).isAlbino).toBe(true);
-    expect(hatch(createEgg('air'), () => 0.01).isAlbino).toBe(false);
+  it('확률 경계 — 0.05 미만에서만 발현한다', () => {
+    expect(hatch(createEgg('air'), () => 0.049).isAlbino).toBe(true);
+    expect(hatch(createEgg('air'), () => 0.05).isAlbino).toBe(false);
   });
 });
 
