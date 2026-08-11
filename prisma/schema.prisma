@@ -3,6 +3,10 @@
 
 generator client {
   provider = "prisma-client-js"
+  // 기본 위치(node_modules/.prisma/client)는 tsx 가 서브패스 import(#main-entry-point)를
+  // 해석하지 못해 시드 실행이 실패한다. 프로젝트 내부로 생성해 우회한다.
+  // Prisma 7 은 이 output 지정을 필수로 요구하므로 업그레이드에도 유리하다.
+  output   = "../src/generated/prisma"
 }
 
 datasource db {

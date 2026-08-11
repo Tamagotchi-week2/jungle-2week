@@ -10,7 +10,7 @@
  *   npx prisma db seed
  */
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '../src/generated/prisma';
 import bcrypt from 'bcryptjs';
 
 import { SPECIES_LIST } from '../src/lib/game/species';

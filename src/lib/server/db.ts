@@ -8,7 +8,7 @@
  * 서버 전용이다. 클라이언트 컴포넌트에서 import 하면 번들에 끌려 들어간다.
  */
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@/generated/prisma';
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
