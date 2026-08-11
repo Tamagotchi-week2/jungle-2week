@@ -37,6 +37,11 @@ jobs:
       - name: Prisma Client 생성
         run: npx prisma generate
 
+      # next-env.d.ts 가 .next/types/*.d.ts 를 import 하므로,
+      # 갓 클론한 환경에서는 이 단계 없이 tsc 가 통과하지 못한다.
+      - name: Next 라우트 타입 생성
+        run: npx next typegen
+
       - name: 타입 체크
         run: npx tsc --noEmit
 
