@@ -318,3 +318,13 @@ button {
   }
 
 }
+
+/* 씬 표시 틀 (SceneFrame.tsx).
+   내용은 고정 폭으로 그린 뒤 통째로 축소한다 — 스크롤이 생기지 않는다. */
+.scene-frame { position: absolute; left: 50%; top: 50%; width: 0; height: 0; }
+.scene-frame-content { position: absolute; left: 0; top: 0; transform-origin: center center; }
+
+/* 씬 안에서 뷰포트 단위(100vh)를 쓰면 틀이 아니라 화면 전체를 기준으로 잡아
+   틀 밖으로 삐져나간다. 틀 안에서는 내용 높이에 맡긴다. */
+.scene-frame-content .dex-book-bg { min-height: 0; }
+.scene-frame-content .dex-book-shell { min-height: 0; }
