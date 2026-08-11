@@ -401,9 +401,12 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
 
   return (
     <div className="village-stage relative grid h-full w-full place-items-center overflow-hidden">
+      {/* 화면 비율에 따라 생기는 여백은 원본 맵과 같은 결의 숲으로 채운다.
+          플레이 맵과 별도 레이어이므로 좌표/충돌 판정에는 영향을 주지 않는다. */}
+      <div className="village-surroundings" aria-hidden="true" />
       {/* 배경과 격자를 같은 상자에 담아야 시설 좌표가 그림과 어긋나지 않는다 */}
       <div
-        className="village-fit relative bg-cover bg-center"
+        className="village-fit village-play-map relative bg-cover bg-center"
         style={{
           backgroundImage: "url('/sprites/backgrounds/village.png')",
           imageRendering: "pixelated",
