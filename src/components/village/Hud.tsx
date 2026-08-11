@@ -1,5 +1,6 @@
 "use client";
 
+import { logout } from "@/app/(auth)/actions";
 import type { VillageScene } from "./types";
 
 interface HudProps {
@@ -43,6 +44,24 @@ export default function Hud({
         </div>
 
         <div className="flex items-center gap-2">
+          {/* 게임 종료 = 로그아웃. 세션이 끊기면 미들웨어가 /login 으로 돌려보낸다.
+              나가는 동작은 되돌리기 어려우니 한 번 확인을 받는다. */}
+          <form
+            action={logout}
+            onSubmit={(event) => {
+              if (!window.confirm("게임을 종료하고 로그아웃할까요?")) {
+                event.preventDefault();
+              }
+            }}
+          >
+            <button
+              type="submit"
+              className="rounded-2xl border border-slate-600 bg-slate-900/80 px-3 py-2 text-sm text-slate-300 transition hover:border-red-400 hover:text-red-200"
+              title="로그아웃하고 게임을 종료합니다"
+            >
+              종료
+            </button>
+          </form>
           {unclaimedRewards > 0 ? (
             // 성체를 완성하면 보상 알이 쌓인다. 진입점이 없으면 받을 방법이 없다.
             <a
