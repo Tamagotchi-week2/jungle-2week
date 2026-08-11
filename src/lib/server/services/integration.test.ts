@@ -343,7 +343,8 @@ suite('서비스 계층 통합', () => {
       expect(early.biteDelayMs).toBeGreaterThanOrEqual(
         BALANCE.FISH_BITE_DELAY_MIN,
       );
-      const earlyResult = await strikeFish(userId, early.sessionId);
+      // 입질 전 입력. 클라이언트가 반응시간 0 을 보고한다
+      const earlyResult = await strikeFish(userId, early.sessionId, 0);
       expect(earlyResult.success).toBe(false);
       expect(earlyResult.reason).toBe('too_early');
 
@@ -353,7 +354,7 @@ suite('서비스 계층 통합', () => {
         where: { id: hit.sessionId },
         data: { startedAt: new Date(Date.now() - hit.biteDelayMs - 200) },
       });
-      const hitResult = await strikeFish(userId, hit.sessionId);
+      const hitResult = await strikeFish(userId, hit.sessionId, 250);
       expect(hitResult.success).toBe(true);
       expect(hitResult.gained).toBe(BALANCE.FISH_YIELD);
 
@@ -366,8 +367,53 @@ suite('서비스 계층 통합', () => {
           ),
         },
       });
-      const lateResult = await strikeFish(userId, late.sessionId);
+      // 로컬 반응시간 자체가 창을 넘긴 경우
+      const lateResult = await strikeFish(
+        userId,
+        late.sessionId,
+        BALANCE.FISH_QTE_WINDOW_MS + 300,
+      );
+      expect(lateResult.success).toBe(false);
       expect(lateResult.reason).toBe('too_late');
+    });
+
+    it('도착이 늦으면 반응시간 주장을 믿지 않는다', async () => {
+      const userId = await newUser();
+      const session = await castFish(userId);
+
+      // 허용 지연을 크게 넘겨 도착한 상황
+      await db.gatherSession.update({
+        where: { id: session.sessionId },
+        data: {
+          startedAt: new Date(
+            Date.now() -
+              session.biteDelayMs -
+              BALANCE.FISH_QTE_WINDOW_MS -
+              BALANCE.FISH_MAX_LATENCY_MS -
+              1000,
+          ),
+        },
+      });
+
+      const result = await strikeFish(userId, session.sessionId, 200);
+      expect(result.success).toBe(false);
+      expect(result.reason).toBe('too_late');
+    });
+
+    it('왕복 지연이 있어도 로컬 반응시간이 창 안이면 성공한다', async () => {
+      const userId = await newUser();
+      const session = await castFish(userId);
+
+      // 입질 후 2초 뒤에 도착 — 서버 기준으로는 창을 넘겼지만 허용 지연 안이다
+      await db.gatherSession.update({
+        where: { id: session.sessionId },
+        data: {
+          startedAt: new Date(Date.now() - session.biteDelayMs - 2000),
+        },
+      });
+
+      const result = await strikeFish(userId, session.sessionId, 300);
+      expect(result.success).toBe(true);
     });
   });
 

@@ -215,12 +215,21 @@ export async function castFish(userId: string): Promise<FishCastResponse> {
 /**
  * 판정.
  *
- * 클라이언트는 "입력했다"는 사실만 보내고, 성공 여부는 서버가 자기 시계로 정한다.
- * 클라이언트가 성공을 주장하게 두면 조작이 너무 쉽다.
+ * 반응시간은 **클라이언트가 로컬에서 잰다** (입질 표시 → 입력). 서버가 요청 도착
+ * 시각으로 재면 왕복 지연이 반응시간에 그대로 더해져, 화면상 제때 눌러도 실패한다.
+ * 실제로 700ms 창이 지연 때문에 체감상 훨씬 좁아지는 문제가 있었다.
+ *
+ * 대신 서버는 **그 주장이 물리적으로 가능한 시각에 도착했는지**를 확인한다.
+ * 입질 전에 도착했거나, 창을 한참 넘겨 도착한 요청은 반응시간과 무관하게 거절한다.
+ *
+ * 완벽한 방어는 아니다. 조작하면 항상 좋은 반응시간을 주장할 수 있다. 다만 자동
+ * 클릭 봇은 애초에 막을 수 없고(3.2장) 걸린 자원이 2개뿐이라, 지연으로 정타가
+ * 실패하는 쪽이 더 큰 손해라고 판단했다.
  */
 export async function strikeFish(
   userId: string,
   sessionId: string,
+  reactionMs: number,
 ): Promise<FishStrikeResponse> {
   return db.$transaction(async (tx) => {
     const session = await tx.gatherSession.findUnique({
@@ -241,7 +250,17 @@ export async function strikeFish(
       data: { resolved: true },
     });
 
-    const reaction = Date.now() - session.startedAt.getTime() - session.biteDelay;
+    // 서버가 보는 경과. 판정이 아니라 "가능한 시각인가" 확인에만 쓴다.
+    const serverElapsed = Date.now() - session.startedAt.getTime();
+    const sinceBite = serverElapsed - session.biteDelay;
+
+    // 입질보다 먼저 도착했다면 반응시간 주장이 무엇이든 성립하지 않는다.
+    // 창을 크게 넘겨 도착한 것도 마찬가지다 (나중에 좋은 값을 주장하는 경우).
+    const arrivalPlausible =
+      sinceBite >= 0 &&
+      sinceBite <= BALANCE.FISH_QTE_WINDOW_MS + BALANCE.FISH_MAX_LATENCY_MS;
+
+    const reaction = arrivalPlausible ? reactionMs : sinceBite;
 
     // 입질 전에 눌렀거나 사람이 낼 수 없는 반응속도
     if (reaction < BALANCE.FISH_MIN_HUMAN_MS) {

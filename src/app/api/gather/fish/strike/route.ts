@@ -1,4 +1,4 @@
-import { expectString, readJson, withUser } from '@/lib/server/route';
+import { expectInt, expectString, readJson, withUser } from '@/lib/server/route';
 import { strikeFish } from '@/lib/server/services/gather';
 import type { FishStrikeRequest } from '@/types/api';
 
@@ -8,5 +8,9 @@ import type { FishStrikeRequest } from '@/types/api';
  */
 export const POST = withUser(async (userId, req) => {
   const body = await readJson<FishStrikeRequest>(req);
-  return strikeFish(userId, expectString(body.sessionId, 'sessionId'));
+  return strikeFish(
+    userId,
+    expectString(body.sessionId, 'sessionId'),
+    expectInt(body.reactionMs, 'reactionMs'),
+  );
 });

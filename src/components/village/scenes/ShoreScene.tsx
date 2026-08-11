@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useMe } from "../MeContext";
 import { BALANCE } from "@/lib/game/constants";
@@ -34,6 +34,11 @@ export default function ShoreScene() {
   const [waitedMs, setWaitedMs] = useState<number>(0);
   const [message, setMessage] = useState("Press Space to cast.");
   const [feedback, setFeedback] = useState<string>("");
+  /**
+   * 입질을 화면에 표시한 시각(performance.now 기준).
+   * 반응시간을 여기서부터 재야 왕복 지연이 섞이지 않는다.
+   */
+  const biteShownAtRef = useRef<number | null>(null);
   const [loading, setLoading] = useState(false);
 
   const isWaiting = state === "casting";
@@ -72,6 +77,7 @@ export default function ShoreScene() {
 
     setSessionId(payload.sessionId);
     setBiteDelayMs(payload.biteDelayMs);
+    biteShownAtRef.current = null;
     setWaitedMs(0);
     setState("casting");
     setMessage("Waiting for a bite...");
@@ -82,6 +88,11 @@ export default function ShoreScene() {
       return;
     }
     const struckDuringWait = state === "casting";
+    // 대기 중 입력은 반응시간이 없다. 0 을 보내면 서버가 too_early 로 판정한다.
+    const reactionMs =
+      biteShownAtRef.current === null
+        ? 0
+        : Math.max(0, Math.round(performance.now() - biteShownAtRef.current));
 
     setLoading(true);
     setFeedback("");
@@ -95,7 +106,7 @@ export default function ShoreScene() {
     const response = await fetch("/api/gather/fish/strike", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sessionId }),
+      body: JSON.stringify({ sessionId, reactionMs }),
     });
     const payload = (await response.json()) as FishStrikeResponse;
     setLoading(false);
@@ -128,6 +139,7 @@ export default function ShoreScene() {
     }, 100);
 
     const timeout = window.setTimeout(() => {
+      biteShownAtRef.current = performance.now();
       setState("bite");
       setTimerMs(QTE_WINDOW_MS);
       setMessage("Bite! Press Space quickly.");
