@@ -58,8 +58,8 @@ export default function MailboxScene() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-6 text-[#3c2818] font-sans">
-      <section className="relative overflow-hidden rounded-[2.75rem] border border-[#5b3b23] bg-[#a86f43] shadow-[0_24px_80px_rgba(79,40,18,0.26)]">
+    <div className="guestbook-pixel mx-auto max-w-6xl px-4 py-6 text-[#3c2818] font-sans">
+      <section className="guestbook-board relative overflow-hidden rounded-[2.75rem] border border-[#5b3b23] bg-[#a86f43] shadow-[0_24px_80px_rgba(79,40,18,0.26)]">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.16),transparent_30%),linear-gradient(180deg,rgba(255,255,255,0.08),transparent_40%),repeating-linear-gradient(180deg,rgba(0,0,0,0.06),rgba(0,0,0,0.06)_1px,transparent_1px,transparent_10px)] opacity-90" />
         <div className="absolute inset-x-10 top-6 h-4 rounded-full bg-[#4e2f1c]/80 shadow-[0_2px_8px_rgba(0,0,0,0.15)]" />
         <div className="absolute left-1/2 top-4 flex -translate-x-1/2 items-center gap-4">
@@ -69,7 +69,7 @@ export default function MailboxScene() {
         </div>
 
         <div className="relative z-10 grid gap-6 lg:grid-cols-[1.1fr_1fr] p-8">
-          <div className="rounded-[2rem] border border-[#5b3b23] bg-[#f2e1c3]/95 p-6 shadow-[inset_0_0_0_1px_rgba(89,55,29,0.14)]">
+          <div className="guestbook-panel rounded-[2rem] border border-[#5b3b23] bg-[#f2e1c3]/95 p-6 shadow-[inset_0_0_0_1px_rgba(89,55,29,0.14)]">
             <p className="text-xs uppercase tracking-[0.35em] text-[#6d4b31]">방명록</p>
             <h2 className="mt-3 text-2xl font-semibold text-[#3c2818]">메시지 남기기</h2>
             <p className="mt-2 text-sm leading-6 text-[#5d422a]">
@@ -86,8 +86,8 @@ export default function MailboxScene() {
                 onChange={(event) => setMessage(event.target.value)}
                 rows={6}
                 maxLength={200}
-                className="w-full resize-none rounded-[1.75rem] border border-[#8f6945] bg-[#f8efde] px-4 py-3 text-sm text-[#3c2818] outline-none transition focus:border-[#7e542f] focus:ring-2 focus:ring-[#7e542f]/20"
-                placeholder="Write your note here..."
+                className="guestbook-input w-full resize-none rounded-[1.75rem] border border-[#8f6945] bg-[#f8efde] px-4 py-3 text-sm text-[#3c2818] outline-none transition focus:border-[#7e542f] focus:ring-2 focus:ring-[#7e542f]/20"
+                placeholder="방명록을 남겨보세요..."
               />
 
               <div className="flex flex-wrap items-center justify-between gap-3">
@@ -95,26 +95,26 @@ export default function MailboxScene() {
                 <button
                   type="submit"
                   disabled={!canSubmit}
-                  className="rounded-full bg-[#7a4f2f] px-5 py-2 text-sm font-semibold text-[#f7e8d3] transition hover:bg-[#8c5d3b] disabled:cursor-not-allowed disabled:bg-[#b79c7f]"
+                  className="guestbook-button rounded-full bg-[#7a4f2f] px-5 py-2 text-sm font-semibold text-[#f7e8d3] transition hover:bg-[#8c5d3b] disabled:cursor-not-allowed disabled:bg-[#b79c7f]"
                 >
-                  등록
+                  기록 남기기
                 </button>
               </div>
             </form>
 
-            <div className="mt-6 rounded-[1.75rem] border border-[#8c6949] bg-[#f3ddba]/90 p-4 text-sm text-[#6d4b31] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]">
+            <div className="guestbook-notice mt-6 rounded-[1.75rem] border border-[#8c6949] bg-[#f3ddba]/90 p-4 text-sm text-[#6d4b31] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]">
               <p className="font-semibold text-[#4c2f1c]">안내</p>
               <p className="mt-2">이 창에서는 왼쪽에 메시지를 쓰고 오른쪽에서 최신 방명록을 확인할 수 있습니다.</p>
             </div>
           </div>
 
-          <div className="rounded-[2rem] border border-[#5b3b23] bg-[#f7e7ca]/95 p-6 shadow-[inset_0_0_0_1px_rgba(89,55,29,0.14)]">
+          <div className="guestbook-panel rounded-[2rem] border border-[#5b3b23] bg-[#f7e7ca]/95 p-6 shadow-[inset_0_0_0_1px_rgba(89,55,29,0.14)]">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs uppercase tracking-[0.35em] text-[#6d4b31]">방명록</p>
                 <p className="mt-2 text-2xl font-semibold text-[#3c2818]">최신 글</p>
               </div>
-              <span className="rounded-full bg-[#d6b58f] px-3 py-2 text-xs font-semibold text-[#3c2818]">
+              <span className="guestbook-count rounded-full bg-[#d6b58f] px-3 py-2 text-xs font-semibold text-[#3c2818]">
                 {sortedEntries.length}개
               </span>
             </div>
@@ -123,7 +123,7 @@ export default function MailboxScene() {
               {sortedEntries.map((entry) => (
                 <article
                   key={entry.id}
-                  className="rounded-[1.75rem] border border-[#8c6949] bg-[#fff1da] p-4"
+                  className="guestbook-entry rounded-[1.75rem] border border-[#8c6949] bg-[#fff1da] p-4"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div>
@@ -131,7 +131,7 @@ export default function MailboxScene() {
                       <p className="text-xs text-[#846041]">{formatTimestamp(entry.createdAt)}</p>
                     </div>
                     {entry.mine ? (
-                      <span className="rounded-full bg-[#7a4f2f]/15 px-2 py-1 text-[11px] font-semibold uppercase text-[#7a4f2f]">
+                      <span className="guestbook-mine rounded-full bg-[#7a4f2f]/15 px-2 py-1 text-[11px] font-semibold uppercase text-[#7a4f2f]">
                         내 글
                       </span>
                     ) : null}
