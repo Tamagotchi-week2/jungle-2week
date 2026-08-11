@@ -36,6 +36,7 @@ export default function HouseScene() {
   const { me, refresh } = useMe();
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [spriteBroken, setSpriteBroken] = useState(false);
 
   const pet = me?.activePet ?? null;
   const resources = me?.resources ?? { crop: 0, mineral: 0, seafood: 0 };
@@ -168,14 +169,23 @@ export default function HouseScene() {
               </div>
 
               <div className="mx-auto w-full max-w-[420px] overflow-hidden rounded-[34px] border border-amber-400/20 bg-slate-900/90 p-5">
-                <div className="mx-auto h-[260px] w-[260px] overflow-hidden rounded-[28px] border border-slate-700/80 bg-slate-900">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={petSprite(pet)}
-                    alt={pet.speciesName ?? STAGE_NAME[pet.stage]}
-                    className="h-full w-full object-contain"
-                    style={{ imageRendering: "pixelated" }}
-                  />
+                <div className="mx-auto grid h-[260px] w-[260px] place-items-center overflow-hidden rounded-[28px] border border-slate-700/80 bg-slate-900">
+                  {spriteBroken ? (
+                    // 아직 준비되지 않은 단계 스프라이트가 있다(성장기 24장).
+                    // 깨진 이미지 아이콘 대신 단계 이름을 보여준다.
+                    <span className="text-sm text-slate-500">
+                      {STAGE_NAME[pet.stage]} 스프라이트 준비 중
+                    </span>
+                  ) : (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={petSprite(pet)}
+                      alt={pet.speciesName ?? STAGE_NAME[pet.stage]}
+                      className="h-full w-full object-contain"
+                      style={{ imageRendering: "pixelated" }}
+                      onError={() => setSpriteBroken(true)}
+                    />
+                  )}
                 </div>
               </div>
 

@@ -43,7 +43,12 @@ function VillageInner() {
         <div className="absolute right-8 bottom-20 h-28 w-56 rounded-[2.5rem] bg-[linear-gradient(135deg,rgba(103,69,40,0.25),rgba(15,21,33,0.9))] opacity-80 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)]" />
       </div>
       <div className="relative z-10 flex-1 overflow-hidden">
-        <Hud resources={resources} eggs={eggs} onOpenScene={setActiveScene} />
+        <Hud
+          resources={resources}
+          eggs={eggs}
+          unclaimedRewards={me?.unclaimedRewards ?? 0}
+          onOpenScene={setActiveScene}
+        />
         <VillageMap activeScene={activeScene} onOpenScene={setActiveScene} />
       </div>
       <VillageOverlay activeScene={activeScene} onClose={() => setActiveScene("none")} />
