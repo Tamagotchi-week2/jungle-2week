@@ -252,15 +252,113 @@ export async function resolveTrade(
   return result.value;
 }
 
+/**
+ * 유효 시간이 지난 내 교환을 정리하고 잠긴 개체를 돌려준다.
+ *
+ * 만료 검사는 원래 joinTrade / resolveTrade 안에서만 일어났다. 즉 **누군가 그
+ * 교환을 건드려야** 비로소 만료가 반영된다. 코드를 발급해 놓고 아무도 참여하지
+ * 않은 채 창을 닫으면 개체가 사실상 영구히 묶였다 — 유효 시간이 지나도 그 사실을
+ * 아무도 확인해 주지 않기 때문이다.
+ *
+ * 그래서 목록을 읽기 전에 이 함수를 먼저 부른다. 주기적으로 도는 작업을 두지
+ * 않고도 같은 효과를 낸다. 이미 만료된 건만 손대므로 살아 있는 교환에는 영향이 없다.
+ *
+ * @returns 이번에 정리한 교환 수
+ */
+export async function releaseExpiredTrades(userId: string): Promise<number> {
+  const expired = await db.trade.findMany({
+    where: {
+      status: { in: ['proposed', 'joined'] },
+      expiresAt: { lt: new Date() },
+      OR: [{ fromUserId: userId }, { toUserId: userId }],
+    },
+    select: { id: true, fromPetId: true, toPetId: true },
+  });
+
+  if (expired.length === 0) {
+    return 0;
+  }
+
+  // 건별로 트랜잭션을 연다. 하나가 이미 다른 요청에서 처리됐더라도 나머지는
+  // 정리되어야 한다.
+  //
+  // 상태는 cancelled 로 남긴다. 스키마가 만료를 cancelled 에 포함하도록
+  // 정의해 두었고(TradeStatus 주석), 전용 값을 새로 넣으려면 마이그레이션이
+  // 필요한데 구분해서 얻는 것이 없다.
+  for (const trade of expired) {
+    await db.$transaction((tx) => invalidateTrade(tx, trade));
+  }
+  return expired.length;
+}
+
 export interface TradeStatusView {
   tradeId: string;
   status: TradeStatus;
   code: string;
   expiresAt: string;
+  /**
+   * 조회한 사람이 제안자인가. 확정·취소 권한은 제안자에게만 있으므로,
+   * 화면을 복원할 때 어느 단계로 되돌릴지 이 값으로 가른다.
+   */
+  iAmProposer: boolean;
   /** 이 상태를 조회한 세션 사용자 기준 내 개체 */
   myPet: TradePetView;
   /** 상대가 아직 참여하지 않았으면 null */
   theirPet: TradePetView | null;
+}
+
+/**
+ * 지금 내가 끼어 있는, 아직 끝나지 않은 교환.
+ *
+ * 교환 진행 상태는 그동안 브라우저 메모리에만 있었다. 새로고침하면 화면은
+ * 잊어버리는데 서버는 멀쩡히 기억하고 있어서, 개체가 잠긴 채 취소할 방법도
+ * 없어졌다. 이 조회로 화면이 하던 교환에 다시 붙는다.
+ *
+ * /api/me 에 얹지 않는다. 자원을 먹을 때마다 불리는 엔드포인트라, 대부분 null 인
+ * 값을 위해 매번 조인을 붙일 이유가 없다. 교환 화면에 들어올 때만 부른다.
+ *
+ * 만료된 건은 먼저 정리하므로 여기로 새어 나오지 않는다.
+ */
+export async function getActiveTrade(
+  userId: string,
+): Promise<TradeStatusView | null> {
+  await releaseExpiredTrades(userId);
+
+  const trade = await db.trade.findFirst({
+    where: {
+      status: { in: ['proposed', 'joined'] },
+      OR: [{ fromUserId: userId }, { toUserId: userId }],
+    },
+    include: {
+      fromPet: { include: { species: true } },
+      toPet: { include: { species: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+  if (!trade) {
+    return null;
+  }
+
+  const isFrom = trade.fromUserId === userId;
+  const myPet = isFrom ? trade.fromPet : trade.toPet;
+  if (!myPet) {
+    return null;
+  }
+
+  return {
+    tradeId: trade.id,
+    status: trade.status,
+    code: trade.code,
+    expiresAt: trade.expiresAt.toISOString(),
+    // 제안자인지 참여자인지에 따라 화면이 할 수 있는 일이 다르다. 화면이 그걸
+    // 판단할 수 있도록 알려준다 — 참여자는 확정 권한이 없다.
+    iAmProposer: isFrom,
+    myPet: toTradePetView(myPet),
+    theirPet: (() => {
+      const other = isFrom ? trade.toPet : trade.fromPet;
+      return other ? toTradePetView(other) : null;
+    })(),
+  };
 }
 
 /**
@@ -297,6 +395,7 @@ export async function getTradeStatusByCode(
     status: trade.status,
     code: trade.code,
     expiresAt: trade.expiresAt.toISOString(),
+    iAmProposer: isFrom,
     myPet: toTradePetView(myPet),
     theirPet: theirPet ? toTradePetView(theirPet) : null,
   };

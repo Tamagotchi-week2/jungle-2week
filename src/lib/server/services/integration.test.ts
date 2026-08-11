@@ -30,7 +30,14 @@ import {
   startMine,
   strikeFish,
 } from './gather';
-import { cancelTrade, createTrade, joinTrade, resolveTrade } from './trade';
+import {
+  cancelTrade,
+  createTrade,
+  getActiveTrade,
+  joinTrade,
+  releaseExpiredTrades,
+  resolveTrade,
+} from './trade';
 import {
   createGuestbookEntry,
   deleteGuestbookEntry,
@@ -571,6 +578,63 @@ suite('서비스 계층 통합', () => {
 
       const unlocked = await listAdultPets(a);
       expect(unlocked.pets[0].isLocked).toBe(false);
+    });
+
+    it('유효 시간이 지난 교환은 아무도 건드리지 않아도 회수된다', async () => {
+      const a = await newUser();
+      const petA = await raiseToAdult(a, 'air');
+
+      // 코드만 발급하고 방치한 상황. 예전에는 join/resolve 로 그 교환을 건드려야
+      // 만료가 반영돼서, 아무도 참여하지 않으면 개체가 영구히 묶였다.
+      const created = await createTrade(a, petA.id);
+      await db.trade.update({
+        where: { code: created.code },
+        data: { expiresAt: new Date(Date.now() - 1000) },
+      });
+
+      expect((await listAdultPets(a)).pets[0].isLocked).toBe(true);
+
+      expect(await releaseExpiredTrades(a)).toBe(1);
+
+      expect((await listAdultPets(a)).pets[0].isLocked).toBe(false);
+      expect((await listAdultPets(a)).tradableCount).toBe(1);
+      // 회수된 뒤에는 곧바로 다시 걸 수 있어야 한다
+      await expect(createTrade(a, petA.id)).resolves.toBeTruthy();
+    });
+
+    it('진행 중인 교환을 조회해 화면이 이어붙을 수 있다', async () => {
+      const a = await newUser();
+      const b = await newUser();
+      const petA = await raiseToAdult(a, 'air');
+      const petB = await raiseToAdult(b, 'land');
+
+      expect(await getActiveTrade(a)).toBeNull();
+
+      const created = await createTrade(a, petA.id);
+      const proposed = await getActiveTrade(a);
+      expect(proposed?.status).toBe('proposed');
+      expect(proposed?.code).toBe(created.code);
+      expect(proposed?.iAmProposer).toBe(true);
+      expect(proposed?.theirPet).toBeNull();
+
+      const joined = await joinTrade(b, created.code, petB.id);
+
+      // 같은 교환이라도 보는 사람에 따라 권한이 다르다. 이걸 뒤집으면
+      // 참여자에게 확정 버튼이 열리거나 제안자의 버튼이 죽는다.
+      const forProposer = await getActiveTrade(a);
+      expect(forProposer?.iAmProposer).toBe(true);
+      expect(forProposer?.myPet.id).toBe(petA.id);
+      expect(forProposer?.theirPet?.id).toBe(petB.id);
+
+      const forJoiner = await getActiveTrade(b);
+      expect(forJoiner?.iAmProposer).toBe(false);
+      expect(forJoiner?.myPet.id).toBe(petB.id);
+      expect(forJoiner?.theirPet?.id).toBe(petA.id);
+
+      // 끝난 교환은 더 이상 진행 중이 아니다
+      await resolveTrade(a, joined.tradeId, true);
+      expect(await getActiveTrade(a)).toBeNull();
+      expect(await getActiveTrade(b)).toBeNull();
     });
 
     it('성체가 아니면 교환에 걸 수 없다', async () => {

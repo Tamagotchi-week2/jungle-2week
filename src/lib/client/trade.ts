@@ -18,6 +18,8 @@ export interface TradeStatusView {
   status: TradeStatusValue;
   code: string;
   expiresAt: string;
+  /** 내가 제안자인가. 확정·취소 권한이 제안자에게만 있어 단계 판정에 쓴다 */
+  iAmProposer: boolean;
   myPet: TradePetView;
   theirPet: TradePetView | null;
 }

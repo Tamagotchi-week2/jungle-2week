@@ -89,11 +89,6 @@ export default function TradeSceneContainer({ onClose }: { onClose?: () => void 
     setLoadingPets(false);
   }, []);
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    void loadPets();
-    return stopPolling;
-  }, [loadPets, stopPolling]);
 
   /** 상대 참여 여부는 폴링으로 확인한다. 실시간 통신은 1차 범위 밖이다 (12장) */
   const startPolling = useCallback(
@@ -127,6 +122,41 @@ export default function TradeSceneContainer({ onClose }: { onClose?: () => void 
     [loadPets, refresh, stopPolling],
   );
 
+  /**
+   * 하던 교환에 다시 붙는다.
+   *
+   * 진행 상태가 이 컴포넌트의 state 에만 있어서, 새로고침하면 화면은 잊어버리는데
+   * 서버는 기억하고 있었다. 그 사이 개체는 잠긴 채 취소할 방법도 없었다.
+   *
+   * 단계 판정에 주의한다. 같은 joined 라도 제안자는 확정할 수 있고(joined)
+   * 참여자는 기다릴 뿐이다(sent). 이걸 뒤집으면 버튼이 죽거나, 권한도 없이
+   * 확정 버튼이 열린다.
+   */
+  const restoreActiveTrade = useCallback(async () => {
+    const res = await fetch("/api/trade/active");
+    if (!res.ok) return;
+
+    const { trade } = (await res.json()) as { trade: TradeStatusView | null };
+    if (!trade) return;
+
+    setStatus(trade);
+    setCode(trade.code);
+    if (trade.status === "proposed") {
+      setPhase("waiting");
+      startPolling(trade.code, "waiting");
+    } else {
+      setPhase(trade.iAmProposer ? "joined" : "sent");
+      if (!trade.iAmProposer) startPolling(trade.code, "sent");
+    }
+    setNotice("진행 중이던 교환을 이어서 표시합니다.");
+  }, [startPolling]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void loadPets().then(restoreActiveTrade);
+    return stopPolling;
+  }, [loadPets, restoreActiveTrade, stopPolling]);
+
   async function run<T>(fn: () => Promise<T>): Promise<T | null> {
     setBusy(true);
     setError(null);
@@ -150,6 +180,7 @@ export default function TradeSceneContainer({ onClose }: { onClose?: () => void 
       status: "proposed",
       code: created.code,
       expiresAt: created.expiresAt,
+      iAmProposer: true,
       myPet: created.myPet,
       theirPet: null,
     });
@@ -171,6 +202,7 @@ export default function TradeSceneContainer({ onClose }: { onClose?: () => void 
       status: "joined",
       code: entered,
       expiresAt: "",
+      iAmProposer: false,
       myPet: joined.myPet,
       theirPet: joined.theirPet,
     });

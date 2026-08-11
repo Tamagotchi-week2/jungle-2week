@@ -75,8 +75,12 @@ export const BALANCE = {
   MAP_WIDTH: 15,
   MAP_HEIGHT: 11,
 
-  /** 교환 코드 유효 시간(분) */
-  TRADE_CODE_TTL_MINUTES: 10,
+  /**
+   * 교환 코드 유효 시간(분).
+   * 짧을수록 실수로 걸어둔 개체가 빨리 돌아온다. 코드를 전달하고 상대가
+   * 입력하기까지 3분이면 충분하다고 보고 10분에서 줄였다.
+   */
+  TRADE_CODE_TTL_MINUTES: 3,
 
   /** 방명록 */
   GUESTBOOK_MAX_LENGTH: 200,
