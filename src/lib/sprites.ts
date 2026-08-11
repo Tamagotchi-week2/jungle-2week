@@ -50,35 +50,53 @@ export function adultSprite(
   return `${ROOT}/adult/${eggType}_${combo}${albinoSuffix(isAlbino)}.png`;
 }
 
-/**
- * 개체 상태로부터 알맞은 스프라이트를 고른다.
- * 단계에 필요한 정보가 없으면 경로를 만들 수 없으므로 예외를 던진다.
- */
-export function petSprite(pet: {
+export interface PetSpriteState {
   eggType: EggType;
   stage: number;
   isAlbino: boolean;
   stage2Trait?: Trait | null;
   combo?: Combo | null;
-}): string {
-  switch (pet.stage) {
-    case 0:
-      return eggSprite(pet.eggType);
-    case 1:
-      return babySprite(pet.eggType, pet.isAlbino);
-    case 2:
-      if (!pet.stage2Trait) {
-        throw new Error('성장기 개체에 stage2Trait 가 없다');
-      }
-      return teenSprite(pet.eggType, pet.stage2Trait, pet.isAlbino);
-    case 3:
-      if (!pet.combo) {
-        throw new Error('성체 개체에 combo 가 없다');
-      }
-      return adultSprite(pet.eggType, pet.combo, pet.isAlbino);
-    default:
-      throw new Error(`알 수 없는 단계: ${pet.stage}`);
+}
+
+/** 마지막 성장 단계(성체). 도달하면 growthStageImages 가 자동으로 최종 전용 이미지를 고른다 */
+export const FINAL_GROWTH_STAGE = 3;
+
+export function isFinalGrowthStage(stage: number): boolean {
+  return stage === FINAL_GROWTH_STAGE;
+}
+
+/**
+ * 성장 단계 → 스프라이트 리졸버 매핑.
+ * 단계가 바뀌면 petSprite() 가 자동으로 이 매핑을 다시 타서 그림이 갈린다 —
+ * 최종 단계(3)도 별도 분기 없이 이 매핑 하나로 처리된다.
+ */
+export const growthStageImages: Record<number, (pet: PetSpriteState) => string> = {
+  0: (pet) => eggSprite(pet.eggType),
+  1: (pet) => babySprite(pet.eggType, pet.isAlbino),
+  2: (pet) => {
+    if (!pet.stage2Trait) {
+      throw new Error('성장기 개체에 stage2Trait 가 없다');
+    }
+    return teenSprite(pet.eggType, pet.stage2Trait, pet.isAlbino);
+  },
+  [FINAL_GROWTH_STAGE]: (pet) => {
+    if (!pet.combo) {
+      throw new Error('성체 개체에 combo 가 없다');
+    }
+    return adultSprite(pet.eggType, pet.combo, pet.isAlbino);
+  },
+};
+
+/**
+ * 개체 상태로부터 알맞은 스프라이트를 고른다.
+ * 단계에 필요한 정보가 없으면 경로를 만들 수 없으므로 예외를 던진다.
+ */
+export function petSprite(pet: PetSpriteState): string {
+  const resolve = growthStageImages[pet.stage];
+  if (!resolve) {
+    throw new Error(`알 수 없는 단계: ${pet.stage}`);
   }
+  return resolve(pet);
 }
 
 // ---------------------------------------------------------------- 마을 필드
