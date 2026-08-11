@@ -3,6 +3,8 @@
 import { useActionState } from 'react';
 
 import type { AuthActionState } from '../actions';
+import { cq } from './scale';
+import { TypewriterText } from './TypewriterText';
 
 interface CredentialsFormProps {
   action: (state: AuthActionState, formData: FormData) => Promise<AuthActionState>;
@@ -16,23 +18,31 @@ export function CredentialsForm({ action, submitLabel, footer }: CredentialsForm
     undefined,
   );
 
+  const inputStyle = { fontSize: cq(13), padding: `${cq(4)} ${cq(8)}`, color: '#5a3a1f' };
+  const labelStyle = { fontSize: cq(11), color: '#5a3a1f', opacity: 0.75 };
+
   return (
-    <form action={formAction} className="flex w-full max-w-xs flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <label htmlFor="nickname" className="text-sm font-medium">
-          닉네임
+    <form
+      action={formAction}
+      className="flex w-full flex-col"
+      style={{ gap: cq(8), color: '#5a3a1f' }}
+    >
+      <div className="flex flex-col text-left" style={{ gap: cq(4) }}>
+        <label htmlFor="nickname" className="font-medium" style={labelStyle}>
+          <TypewriterText text="닉네임" delay={250} />
         </label>
         <input
           id="nickname"
           name="nickname"
           autoComplete="username"
           required
-          className="rounded border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+          className="rounded border bg-white/90"
+          style={{ ...inputStyle, borderColor: 'rgba(107,66,38,0.35)' }}
         />
       </div>
-      <div className="flex flex-col gap-1">
-        <label htmlFor="password" className="text-sm font-medium">
-          비밀번호
+      <div className="flex flex-col text-left" style={{ gap: cq(4) }}>
+        <label htmlFor="password" className="font-medium" style={labelStyle}>
+          <TypewriterText text="비밀번호" delay={550} />
         </label>
         <input
           id="password"
@@ -40,14 +50,25 @@ export function CredentialsForm({ action, submitLabel, footer }: CredentialsForm
           type="password"
           autoComplete="current-password"
           required
-          className="rounded border border-zinc-300 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+          className="rounded border bg-white/90"
+          style={{ ...inputStyle, borderColor: 'rgba(107,66,38,0.35)' }}
         />
       </div>
-      {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
+      {state?.error && (
+        <p className="text-red-700" style={{ fontSize: cq(11) }}>
+          {state.error}
+        </p>
+      )}
       <button
         type="submit"
         disabled={pending}
-        className="rounded bg-foreground px-4 py-2 text-background disabled:opacity-50"
+        className="rounded disabled:opacity-50"
+        style={{
+          fontSize: cq(13),
+          padding: `${cq(6)} ${cq(12)}`,
+          backgroundColor: '#6b4226',
+          color: '#fdf6ea',
+        }}
       >
         {pending ? '처리 중...' : submitLabel}
       </button>

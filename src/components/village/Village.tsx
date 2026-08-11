@@ -6,6 +6,8 @@ import { MeProvider, useMe } from "./MeContext";
 import Hud from "./Hud";
 import VillageMap from "./VillageMap";
 import VillageOverlay from "./VillageOverlay";
+import BackgroundMusic from "@/components/ui/BackgroundMusic";
+import { SOUNDS } from "@/lib/client/sounds";
 
 export default function Village() {
   return (
@@ -35,8 +37,18 @@ function VillageInner() {
   const resources = me?.resources ?? { crop: 0, mineral: 0, seafood: 0 };
   const eggs = me?.eggs ?? { air: 0, land: 0, sea: 0, gold: 0 };
 
+  // 방명록은 전용 트랙, 집(방)은 홈 트랙, 마을 필드를 비롯한 나머지는
+  // 공용 배경음이 흐른다.
+  const musicSrc =
+    activeScene === "mailbox"
+      ? SOUNDS.guestbook
+      : activeScene === "house"
+        ? SOUNDS.home
+        : SOUNDS.ambient;
+
   return (
     <main className="relative flex h-screen flex-col overflow-hidden bg-[#f9f8f5] text-slate-100 font-mono pixelated">
+      <BackgroundMusic src={musicSrc} />
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute left-1/2 top-1/2 h-[92%] w-[92%] -translate-x-1/2 -translate-y-1/2 rounded-[3.5rem] border border-slate-600/80 bg-[radial-gradient(circle_at_top_left,rgba(216,183,114,0.15),transparent_35%),linear-gradient(180deg,rgba(88,59,40,0.16),rgba(11,16,29,0.9))] shadow-[inset_0_0_0_2px_rgba(255,255,255,0.04)] ring-1 ring-slate-700/60" />
         <div className="absolute left-10 top-6 h-24 w-72 rounded-full bg-[linear-gradient(90deg,rgba(156,108,70,0.95),rgba(85,58,39,0.96))] shadow-[0_20px_60px_rgba(0,0,0,0.35)]" />

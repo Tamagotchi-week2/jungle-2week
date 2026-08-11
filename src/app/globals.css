@@ -144,7 +144,6 @@ button {
 .village-fit {
   aspect-ratio: 15 / 11;
   width: min(100%, calc(100cqh * 15 / 11));
-
 }
 
 /* 로그인 화면 — 다마고치 등장 연출 (17.1) */
@@ -251,5 +250,4 @@ button {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-
 }
