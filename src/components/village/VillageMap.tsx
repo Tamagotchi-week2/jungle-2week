@@ -14,9 +14,9 @@ import {
   MAP_HEIGHT,
   MAP_START,
   MAP_WIDTH,
-  PLAYER_FACING_ICONS,
   VILLAGE_MAP,
 } from "./constants";
+import { buildingSprite, playerSprite, type Direction } from "@/lib/sprites";
 
 const DIRECTION_VECTORS = {
   up: { dx: 0, dy: -1 },
@@ -28,14 +28,14 @@ const DIRECTION_VECTORS = {
 const FARM_GROW_SECONDS = 120;
 const MINE_CLICK_TARGET = 35;
 
-// Placeholder farm icon paths for display states. Final names to be agreed with art team.
-const FARM_IMAGE_PLACEHOLDERS = {
-  empty: "/sprites/buildings/farm_empty.png",
-  growing: "/sprites/buildings/farm_growing.png",
-  ready: "/sprites/buildings/farm_ready.png",
+// 밭 상태별 아이콘. 전용 empty/growing/ready 스프라이트가 없으므로 실제 존재하는 에셋으로 대체한다
+const FARM_ICON_BY_STATE = {
+  empty: buildingSprite("farm"),
+  growing: "/sprites/farm/seed.png",
+  ready: "/sprites/farm/crop.png",
 };
 
-type Facing = keyof typeof DIRECTION_VECTORS;
+type Facing = Direction;
 
 interface VillageMapProps {
   activeScene: VillageScene;
@@ -56,6 +56,7 @@ function getFarmElapsedSeconds(plantedAt: string) {
 export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps) {
   const [playerPosition, setPlayerPosition] = useState(MAP_START);
   const [facing, setFacing] = useState<Facing>("down");
+  const [walkFrame, setWalkFrame] = useState<0 | 1>(0);
   const [farmState, setFarmState] = useState<FarmStateResponse | null>(null);
   const [farmLoading, setFarmLoading] = useState(false);
   const [farmFeedback, setFarmFeedback] = useState("Loading farm state...");
@@ -306,6 +307,7 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
       }
 
       setPlayerPosition({ x: nextX, y: nextY });
+      setWalkFrame((current) => (current === 0 ? 1 : 0));
     }
 
     window.addEventListener("keydown", handleKeyDown);
@@ -314,9 +316,9 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
 
   const farmIcon = farmState?.plantedAt
     ? farmReady
-      ? FARM_IMAGE_PLACEHOLDERS.ready
-      : FARM_IMAGE_PLACEHOLDERS.growing
-    : FARM_IMAGE_PLACEHOLDERS.empty;
+      ? FARM_ICON_BY_STATE.ready
+      : FARM_ICON_BY_STATE.growing
+    : FARM_ICON_BY_STATE.empty;
 
   return (
     <div className="relative h-full w-full overflow-hidden">
@@ -352,9 +354,13 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
                   style={style}
                   className="absolute flex items-center justify-center"
                 >
-                  <span className="text-3xl text-emerald-200 drop-shadow-[0_0_8px_rgba(16,185,129,0.45)]">
-                    {PLAYER_FACING_ICONS[facing]}
-                  </span>
+                  <img
+                    src={playerSprite(facing, walkFrame)}
+                    alt="Player"
+                    className="h-full w-full object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.35)]"
+                    style={{ imageRendering: "pixelated" }}
+                    draggable={false}
+                  />
                 </div>
               );
             }
@@ -373,6 +379,11 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
                   src={facilityImage}
                   alt={facility!.label}
                   className="h-full w-full object-contain p-1"
+                  style={{
+                    imageRendering: "pixelated",
+                    transform: facility!.scale ? `scale(${facility!.scale})` : undefined,
+                    transformOrigin: "center bottom",
+                  }}
                   draggable={false}
                 />
               </button>
