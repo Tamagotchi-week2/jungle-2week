@@ -45,6 +45,17 @@ export default function MailboxScene() {
     [entries],
   );
 
+  async function remove(id: string) {
+    const res = await fetch(`/api/guestbook/${id}`, { method: 'DELETE' });
+    if (!res.ok) {
+      const body = (await res.json()) as { error?: string };
+      setFeedback(body.error ?? "삭제하지 못했습니다.");
+      return;
+    }
+    setFeedback(null);
+    await load();
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!canSubmit) {
@@ -104,6 +115,14 @@ export default function MailboxScene() {
                 placeholder="방명록을 남겨보세요..."
               />
 
+              {feedback ? (
+                // 길이 초과·1분 쿨다운 같은 서버 거절을 그대로 보여준다.
+                // 표시하지 않으면 등록이 조용히 실패해 유저가 이유를 알 수 없다.
+                <p className="rounded-[1.25rem] border border-[#b5442f] bg-[#f6d9cf] px-4 py-2 text-sm text-[#7a2d1c]">
+                  {feedback}
+                </p>
+              ) : null}
+
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <span className="text-sm text-[#846041]">최대 200자. 1분에 한 번 등록 가능합니다.</span>
                 <button
@@ -145,9 +164,19 @@ export default function MailboxScene() {
                       <p className="text-xs text-[#846041]">{formatTimestamp(entry.createdAt)}</p>
                     </div>
                     {entry.mine ? (
-                      <span className="guestbook-mine rounded-full bg-[#7a4f2f]/15 px-2 py-1 text-[11px] font-semibold uppercase text-[#7a4f2f]">
-                        내 글
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="guestbook-mine rounded-full bg-[#7a4f2f]/15 px-2 py-1 text-[11px] font-semibold uppercase text-[#7a4f2f]">
+                          내 글
+                        </span>
+                        {/* 작성자만 삭제할 수 있다 (설계 17.6). 서버도 같은 조건을 검증한다 */}
+                        <button
+                          type="button"
+                          onClick={() => remove(entry.id)}
+                          className="rounded-full border border-[#8c6949] px-2 py-1 text-[11px] font-semibold text-[#7a4f2f] transition hover:bg-[#7a4f2f]/10"
+                        >
+                          삭제
+                        </button>
+                      </div>
                     ) : null}
                   </div>
                   <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-[#4c2f1c]">{entry.message}</p>
