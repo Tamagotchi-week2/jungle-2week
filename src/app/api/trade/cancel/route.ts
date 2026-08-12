@@ -7,7 +7,7 @@ import type { TradeCancelRequest } from '@/types/api';
 
 /**
  * 교환 취소 (9장). 제안자가 직접 잠금을 푼다.
- * 없으면 상대가 오지 않을 때 만료 10분을 기다려야 한다.
+ * 없으면 상대가 오지 않을 때 만료 3분을 기다려야 한다.
  */
 export async function POST(request: NextRequest) {
   try {

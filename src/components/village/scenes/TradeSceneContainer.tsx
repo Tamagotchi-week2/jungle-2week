@@ -418,7 +418,7 @@ export default function TradeSceneContainer({ onClose }: { onClose?: () => void 
             <div className="trade-station-panel p-4">
               <p className="text-sm font-semibold">코드 발급</p>
               <p className="mt-1 text-xs text-slate-400">
-                상대에게 코드를 알려주세요. 10분간 유효합니다.
+                상대에게 코드를 알려주세요. 3분간 유효합니다.
               </p>
               {phase === "waiting" && status ? (
                 <p className="mt-3 text-center font-mono text-3xl font-bold tracking-widest">

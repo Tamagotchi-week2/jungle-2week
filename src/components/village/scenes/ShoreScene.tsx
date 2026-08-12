@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { useMe } from "../MeContext";
 import { BALANCE } from "@/lib/game/constants";
@@ -33,7 +33,7 @@ export default function ShoreScene() {
   const [timerMs, setTimerMs] = useState<number>(0);
   /** 대기 중 경과 시간(ms). 게이지는 이 값을 WAIT_GAUGE_MS 로 나눠 그린다 */
   const [waitedMs, setWaitedMs] = useState<number>(0);
-  const [message, setMessage] = useState("Press Space to cast.");
+  const [message, setMessage] = useState("스페이스바를 눌러 낚싯대를 던지세요.");
   const [feedback, setFeedback] = useState<string>("");
   /**
    * 입질을 화면에 표시한 시각(performance.now 기준).
@@ -44,19 +44,6 @@ export default function ShoreScene() {
 
   const isWaiting = state === "casting";
   const isBiteActive = state === "bite";
-
-  const buttonLabel = useMemo(() => {
-    if (state === "idle") {
-      return "Press Space to cast.";
-    }
-    if (state === "casting") {
-      return "Waiting for bite...";
-    }
-    if (state === "bite") {
-      return "Press Space to strike!";
-    }
-    return "Press Space to cast again.";
-  }, [state]);
 
   async function cast() {
     if (loading) {
@@ -72,7 +59,7 @@ export default function ShoreScene() {
     setLoading(false);
 
     if (!response.ok) {
-      setFeedback("Could not cast.");
+      setFeedback("낚싯대를 던지지 못했습니다.");
       return;
     }
 
@@ -81,7 +68,7 @@ export default function ShoreScene() {
     biteShownAtRef.current = null;
     setWaitedMs(0);
     setState("casting");
-    setMessage("Waiting for a bite...");
+    setMessage("찌를 바라보며 입질을 기다리세요.");
   }
 
   /** 판정 결과를 화면 문구로 옮긴다. 로컬 판정과 서버 판정이 같은 표현을 쓴다 */
@@ -164,7 +151,7 @@ export default function ShoreScene() {
       biteShownAtRef.current = performance.now();
       setState("bite");
       setTimerMs(QTE_WINDOW_MS);
-      setMessage("Bite! Press Space quickly.");
+      setMessage("입질이다! 빠르게 스페이스바를 누르세요!");
     }, biteDelayMs);
 
     return () => {
@@ -185,8 +172,8 @@ export default function ShoreScene() {
     const timeout = window.setTimeout(() => {
       setState("result");
       setSessionId(null);
-      setMessage("No strike received.");
-      setFeedback("The fish escaped.");
+      setMessage("물고기를 놓쳤다...");
+      setFeedback("물고기가 도망갔습니다.");
     }, QTE_WINDOW_MS);
 
     return () => {
@@ -202,7 +189,7 @@ export default function ShoreScene() {
 
     const timeout = window.setTimeout(() => {
       setState("idle");
-      setMessage("Press Space to cast again.");
+      setMessage("스페이스바를 눌러 다시 낚시하세요.");
       setFeedback("");
       setTimerMs(0);
     }, 1800);
@@ -216,6 +203,9 @@ export default function ShoreScene() {
         return;
       }
       event.preventDefault();
+      if (event.repeat) {
+        return;
+      }
 
       if (loading) {
         return;
@@ -238,8 +228,8 @@ export default function ShoreScene() {
   }, [state, loading, sessionId]);
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-6 text-slate-100">
-      <section className="relative overflow-hidden rounded-[32px] border border-slate-700/80 bg-slate-950/95 shadow-[0_30px_90px_rgba(0,0,0,0.35)]">
+    <div className="shore-scene mx-auto max-w-5xl px-4 py-6 text-slate-100">
+      <section className="shore-stage relative overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
@@ -247,29 +237,30 @@ export default function ShoreScene() {
             imageRendering: "pixelated",
           }}
         />
-        <div className="absolute inset-0 bg-slate-950/70" />
+        <div className="absolute inset-0 bg-slate-950/45" />
 
-        <div className="relative space-y-6 p-6">
-          <div className="rounded-[28px] border border-slate-800/90 bg-slate-900/90 p-5 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)]">
-            <p className="text-xs uppercase tracking-[0.35em] text-slate-500">Fishing Status</p>
-            <p className="mt-3 text-2xl font-semibold text-slate-100">{message}</p>
+        <div className="shore-layout relative p-6">
+          <div className="shore-status-card p-5">
+            <p className="shore-card-label text-xs tracking-[0.24em]">낚시 상태</p>
+            <p className="shore-status-message mt-3 text-xl font-semibold">{message}</p>
+            <div className="shore-gauge-space mt-3">
             {isBiteActive && (
-              <div className="mt-3 flex items-center gap-2">
-                <div className="h-2 w-40 bg-slate-700 rounded-full overflow-hidden">
+              <div className="flex items-center gap-2">
+                <div className="shore-gauge overflow-hidden">
                   <div
-                    className="h-full bg-amber-400 transition-all"
+                    className="shore-gauge-fill shore-gauge-bite"
                     style={{ width: `${Math.max(0, (timerMs / QTE_WINDOW_MS) * 100)}%` }}
                   />
                 </div>
-                <p className="text-sm text-amber-300">{formatTime(timerMs / 1000)}</p>
+                <p className="text-sm text-amber-200">{formatTime(timerMs / 1000)}</p>
               </div>
             )}
             {isWaiting && (
-              <div className="mt-3">
+              <div>
                 {/* 게이지는 항상 9초 기준. 입질은 그 도중 어느 지점에서 갑자기 온다 */}
-                <div className="h-2 w-40 overflow-hidden rounded-full bg-slate-700">
+                <div className="shore-gauge overflow-hidden">
                   <div
-                    className="h-full bg-blue-400"
+                    className="shore-gauge-fill shore-gauge-wait"
                     style={{ width: `${(waitedMs / WAIT_GAUGE_MS) * 100}%` }}
                   />
                 </div>
@@ -279,11 +270,12 @@ export default function ShoreScene() {
                 </p>
               </div>
             )}
+            </div>
           </div>
 
-          <div className="mx-auto w-full max-w-[420px] overflow-hidden rounded-[34px] border border-amber-400/20 bg-slate-900/90 p-5 shadow-[0_0_0_12px_rgba(248,213,113,0.08)]">
-            <div className="relative overflow-hidden rounded-[30px] border border-slate-800/90 bg-slate-950/90 p-4">
-              <div className="mx-auto flex h-[280px] w-[280px] items-center justify-center rounded-[28px] border border-slate-700/80 bg-slate-900">
+          <div className="shore-pond-frame mx-auto w-full max-w-[420px] p-5">
+            <div className="shore-pond-inner relative overflow-hidden p-4">
+              <div className="shore-sprite-space mx-auto flex h-[280px] w-[280px] items-center justify-center">
                 {state === "bite" ? (
                   <div className="animate-bounce">
                     <img src="/sprites/shore/bobber.png" alt="Bobber" className="h-16 w-16 object-contain image-rendering-pixelated" />
@@ -295,19 +287,17 @@ export default function ShoreScene() {
             </div>
           </div>
 
-          <div className="rounded-[26px] border border-slate-800/90 bg-slate-900/90 p-5 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.03)]">
-            <p className="text-xs uppercase tracking-[0.35em] text-slate-500">Action</p>
-            <p className="mt-3 text-lg text-slate-100 font-semibold">
-              Press <span className="text-amber-300">SPACE</span> {state === "bite" ? "to strike!" : "to cast"}
+          <div className="shore-action-card p-5">
+            <p className="shore-card-label text-xs tracking-[0.24em]">조작 안내</p>
+            <p className="mt-3 text-lg font-semibold">
+              <span className="shore-space-key">스페이스바</span>를 눌러 {state === "bite" ? "낚아채세요!" : "낚싯대를 던지세요"}
             </p>
-            {loading ? <p className="mt-2 text-sm text-slate-400">Processing...</p> : null}
+            <p className="mt-2 min-h-5 text-sm text-amber-100/80">{loading ? "처리 중..." : " "}</p>
           </div>
 
-          {feedback && (
-            <div className="rounded-[26px] border border-emerald-500/20 bg-emerald-500/5 p-4 text-sm text-emerald-200">
-              {feedback}
-            </div>
-          )}
+          <div className={`shore-feedback p-3 text-sm ${feedback ? "shore-feedback-visible" : ""}`}>
+            {feedback || "결과 메시지 대기"}
+          </div>
         </div>
       </section>
     </div>

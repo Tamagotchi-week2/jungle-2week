@@ -423,6 +423,98 @@ button {
 .trade-station-complete .trade-station-empty-leaves { color:#ffe27a; animation:trade-sparkle .9s steps(2,end) infinite; }
 @keyframes trade-complete-arrive { from { opacity:0; transform:translateY(12px) scale(.98); } to { opacity:1; transform:none; } }
 
+/* 낚시터 — 상태가 바뀌어도 전체 크기가 고정되는 물가 픽셀 UI. */
+.shore-scene,
+.shore-scene * { font-family:var(--font-pixel),monospace; }
+.shore-stage {
+  height:min(780px,calc(100vh - 8rem));
+  min-height:620px;
+  border:6px solid #263a29;
+  border-radius:10px;
+  background:#082e58;
+  box-shadow:inset 0 0 0 3px #648452,6px 7px 0 rgba(7,18,20,.58);
+}
+.shore-layout {
+  height:100%;
+  display:grid;
+  grid-template-rows:150px minmax(300px,1fr) 118px 46px;
+  gap:1rem;
+}
+.shore-status-card,
+.shore-action-card {
+  overflow:hidden;
+  border:5px solid #4c321b;
+  border-radius:7px;
+  background:linear-gradient(rgba(62,37,18,.08),rgba(62,37,18,.08)),url("/sprites/house/wood-card-brown.png") center/cover;
+  color:#fff1c8;
+  box-shadow:inset 0 0 0 2px #d0934d,4px 4px 0 rgba(27,17,9,.5);
+  text-shadow:2px 2px 0 #402414;
+}
+.shore-card-label { color:#ffe2a1; font-weight:900; }
+.shore-status-message { min-height:1.8rem; color:#fff8df; }
+.shore-gauge-space { height:44px; }
+.shore-gauge {
+  width:180px;
+  height:13px;
+  padding:2px;
+  border:2px solid #312116;
+  border-radius:3px;
+  background:#173a50;
+  box-shadow:inset 0 2px 0 rgba(0,0,0,.35);
+}
+.shore-gauge-fill { display:block; height:100%; transition:width .1s linear; }
+.shore-gauge-wait { background:repeating-linear-gradient(90deg,#53b7d2 0 9px,#7dd8df 9px 15px); }
+.shore-gauge-bite { background:repeating-linear-gradient(90deg,#f2b63f 0 9px,#ffe072 9px 15px); }
+.shore-pond-frame {
+  align-self:stretch;
+  overflow:hidden;
+  border:7px solid #4b301b;
+  border-radius:9px;
+  background:linear-gradient(135deg,#99602d,#d18b42 18%,#71431f);
+  box-shadow:inset 0 0 0 3px #e4ad60,6px 6px 0 rgba(24,15,9,.52);
+}
+.shore-pond-inner {
+  height:100%;
+  border:4px solid #243b31;
+  border-radius:5px;
+  background:repeating-linear-gradient(0deg,rgba(74,173,202,.16) 0 3px,transparent 3px 15px),linear-gradient(#0d4e79,#082f61);
+  box-shadow:inset 0 0 0 3px #387a85;
+}
+.shore-sprite-space {
+  max-width:100%;
+  max-height:100%;
+  border:3px solid rgba(126,205,202,.48);
+  border-radius:5px;
+  background:rgba(8,37,75,.5);
+  box-shadow:inset 0 0 24px rgba(23,119,151,.28);
+}
+.shore-space-key {
+  display:inline-block;
+  padding:.12rem .45rem;
+  color:#392515;
+  border:2px solid #4b2d17;
+  border-radius:4px;
+  background:#f0cd72;
+  box-shadow:inset 0 -2px 0 #ba7c31,2px 2px 0 #382113;
+  text-shadow:1px 1px 0 #fff0b0;
+}
+.shore-feedback {
+  min-height:46px;
+  visibility:hidden;
+  color:#f5efcc;
+  text-align:center;
+  border:3px solid #31512d;
+  border-radius:5px;
+  background:rgba(36,81,49,.9);
+  box-shadow:inset 0 0 0 2px #729457;
+}
+.shore-feedback-visible { visibility:visible; }
+@media (max-height:760px) {
+  .shore-stage { height:600px; min-height:600px; }
+  .shore-layout { grid-template-rows:125px minmax(260px,1fr) 100px 40px; gap:.65rem; padding:1rem; }
+  .shore-sprite-space { height:220px; width:220px; }
+}
+
 /* Village guestbook: a compact pixel notice board, not a web comment card. */
 .guestbook-pixel { color:#382719; font-family: var(--font-pixel), var(--font-geist-sans), sans-serif; }.guestbook-board { border:4px solid #4e321d !important; border-radius:0 !important; background:#9a7143 !important; box-shadow:inset 0 0 0 4px #c4995d,inset 0 0 0 8px #735032,6px 7px 0 #302116 !important; }.guestbook-board > div:first-child { opacity:.42 !important; background:repeating-linear-gradient(90deg,rgba(76,48,27,.22) 0 3px,transparent 3px 18px),repeating-linear-gradient(0deg,rgba(245,218,164,.12) 0 2px,transparent 2px 20px) !important; }.guestbook-board > div:nth-child(2) { right:8%; left:8%; height:6px; border-radius:0 !important; background:#5d3b22 !important; box-shadow:0 3px 0 rgba(48,33,22,.55) !important; }.guestbook-board > div:nth-child(3) span { border:2px solid #4b301c !important; border-radius:0 !important; background:#ceb37c !important; box-shadow:2px 2px 0 #4b301c !important; }.guestbook-board > div:nth-child(3) span:nth-child(2) { height:3px; border:0 !important; background:#4b301c !important; box-shadow:none !important; }
 .guestbook-panel { border:3px solid #67452a !important; border-radius:0 !important; background:#e2cfa5 !important; box-shadow:inset 0 0 0 3px #f2e4c2,4px 4px 0 #593a23 !important; }.guestbook-panel > p:first-child { color:#705031 !important; font-size:.68rem; font-weight:800; letter-spacing:.18em; }.guestbook-panel h2,.guestbook-panel .text-2xl { font-weight:700; letter-spacing:.03em; }
@@ -503,6 +595,7 @@ button {
   image-rendering: pixelated;
   box-shadow: inset 0 0 0 2px rgba(255, 225, 183, 0.22), 4px 5px 0 rgba(20, 11, 7, 0.55);
 }
+
 
 .village-hint-card {
   background-color: #9b5b31;

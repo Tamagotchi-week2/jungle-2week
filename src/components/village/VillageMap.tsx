@@ -88,6 +88,7 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
   const [mineFeedback, setMineFeedback] = useState("");
   /** 마지막 채굴이 성공이었는가. 실패 문구를 초록색으로 띄우지 않기 위해 쓴다 */
   const [mineOk, setMineOk] = useState(true);
+
   const [mineLoading, setMineLoading] = useState(false);
 
   const targetFacility = useMemo(() => {
@@ -511,6 +512,24 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
                 {mineFeedback}
               </p>
             ) : null}
+          </div>
+        ) : targetFacility?.scene === "house" ? (
+          <div className="mt-3 space-y-2">
+            <p className="text-sm">앞에 집이 있습니다.</p>
+            <p className="text-base font-semibold text-slate-100">펫 돌보기</p>
+            <p className="text-sm">스페이스바를 눌러 알을 부화시키고 펫에게 먹이를 주세요.</p>
+          </div>
+        ) : targetFacility?.scene === "mailbox" ? (
+          <div className="mt-3 space-y-2">
+            <p className="text-sm">앞에 우체통이 있습니다.</p>
+            <p className="text-base font-semibold text-slate-100">마을 방명록</p>
+            <p className="text-sm">스페이스바를 눌러 이웃의 편지를 읽거나 새 편지를 남기세요.</p>
+          </div>
+        ) : targetFacility?.scene === "shore" ? (
+          <div className="mt-3 space-y-2">
+            <p className="text-sm">앞에 낚시터가 있습니다.</p>
+            <p className="text-base font-semibold text-slate-100">물고기 낚기</p>
+            <p className="text-sm">스페이스바를 눌러 낚싯대를 드리우고 어패 자원을 모으세요.</p>
           </div>
         ) : (
           <div className="mt-3 text-sm">
