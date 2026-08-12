@@ -820,7 +820,7 @@ button {
 @media (max-width:640px) { .guestbook-board > div:nth-child(2) { right:12%; left:12%; }.guestbook-panel { padding:1.1rem !important; }.guestbook-entry { box-shadow:3px 3px 0 #745135 !important; } }
 
 /* 마을 화면 크기 맞춤.
-   맵은 15:11 비율을 유지하면서 화면(스테이지) 안에 완전히 들어가야 한다.
+   맵은 원본 이미지 1448:1086 비율을 유지하면서 화면(스테이지) 안에 완전히 들어가야 한다.
    가로만 꽉 채우면(w-full) 넓은 화면에서 세로가 넘쳐 스크롤이 생긴다.
 
    컨테이너 쿼리 단위(cqh)로 스테이지 높이를 읽어, 비율을 지킨 폭과
@@ -857,8 +857,9 @@ button {
 
 .village-fit {
   z-index: 0;
-  aspect-ratio: 15 / 11;
-  width: min(100%, calc(100cqh * 15 / 11));
+  /* village.webp 원본 1448x1086 비율과 정확히 일치시켜 background-size: cover 크롭을 방지한다. */
+  aspect-ratio: 1448 / 1086;
+  width: min(100%, calc(100cqh * 1448 / 1086));
   max-height: 100%;
 }
 
