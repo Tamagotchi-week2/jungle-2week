@@ -59,12 +59,12 @@ interface AdultDisplayPet {
 }
 
 /** 드래그 중인 대상. 밥(자원)과 알 보상(EggType)은 서로 다른 타입이라 종류를 함께 들고 다닌다 */
-type DragPayload = { kind: "feed"; type: ResourceType } | { kind: "reward"; type: EggType };
+type DragPayload = { kind: "feed"; type: ResourceType };
 
 export default function HouseScene() {
   const { me, refresh } = useMe();
   const [busy, setBusy] = useState(false);
-  const [feedback, setFeedback] = useState<string | null>(null);
+  const [, setFeedback] = useState<string | null>(null);
   /**
    * 불러오지 못한 스프라이트 경로. boolean 으로 두면 한 번 실패한 뒤 되돌아오지
    * 못해, 진화해서 멀쩡한 그림이 생겨도 계속 텍스트만 나온다.
@@ -115,6 +115,14 @@ export default function HouseScene() {
   // 최종 성장 단계에 막 도달했을 때만 짧게 연출한다.
   const [celebrating, setCelebrating] = useState(false);
   const [evolving, setEvolving] = useState(false);
+  /** 마지막 급여 뒤 서버 진화 전에 진행 바를 먼저 완충해서 보여주기 위한 화면 값 */
+  const [feedProgressPreview, setFeedProgressPreview] = useState<{
+    petId: string;
+    stage: number;
+    count: number;
+  } | null>(null);
+  const [hatchedPet, setHatchedPet] = useState<HatchResponse["pet"] | null>(null);
+  const [grownPet, setGrownPet] = useState<EvolveResponse["pet"] | null>(null);
 
   const pet = me?.activePet ?? null;
   const resources = me?.resources ?? { crop: 0, mineral: 0, seafood: 0 };
@@ -191,6 +199,7 @@ export default function HouseScene() {
       setFeedback(
         result.pet.isAlbino ? "알비노가 부화했습니다!" : "알이 부화했습니다.",
       );
+      setHatchedPet(result.pet);
       await refresh();
     }
   }
@@ -202,7 +211,15 @@ export default function HouseScene() {
       resourceType,
     });
     if (result) {
+      setFeedProgressPreview({
+        petId: result.pet.id,
+        stage: result.pet.stage,
+        count: result.pet.feedCount,
+      });
       if (result.canEvolve) {
+        // 마지막 칸이 화면에 그려지고 CSS 전환이 끝난 다음 진화 연출을 시작한다.
+        setEvolving(true);
+        await new Promise<void>((resolve) => window.setTimeout(resolve, 550));
         await evolve(result.pet.id);
       } else {
         await refresh();
@@ -211,7 +228,7 @@ export default function HouseScene() {
   }
 
   function canFeed(type: ResourceType) {
-    return !busy && !canEvolve && resources[type] > 0;
+    return !busy && !evolving && !canEvolve && resources[type] > 0;
   }
 
   /** 선택만 하는 단계 — 로컬 state 에 저장하고 하이라이트만 한다. 서버 전송은 claimSelectedReward() 몫 */
@@ -263,10 +280,6 @@ export default function HouseScene() {
       event.preventDefault();
       return;
     }
-    if (payload.kind === "reward" && busy) {
-      event.preventDefault();
-      return;
-    }
     event.dataTransfer.setData("text/plain", JSON.stringify(payload));
     event.dataTransfer.effectAllowed = "move";
     setDragPayload(payload);
@@ -306,10 +319,8 @@ export default function HouseScene() {
     const payload = resolveDroppedPayload(event);
     setDragPayload(null);
     if (!payload) return;
-    if (payload.kind === "feed" && canFeed(payload.type)) {
+    if (canFeed(payload.type)) {
       feed(payload.type);
-    } else if (payload.kind === "reward") {
-      selectReward(payload.type);
     }
   }
 
@@ -320,8 +331,7 @@ export default function HouseScene() {
   }
 
   function handleDragTouchStart(event: React.TouchEvent<HTMLButtonElement>, payload: DragPayload) {
-    if (payload.kind === "feed" && !canFeed(payload.type)) return;
-    if (payload.kind === "reward" && busy) return;
+    if (!canFeed(payload.type)) return;
     const touch = event.touches[0];
     setDragPayload(payload);
     setTouchPoint({ x: touch.clientX, y: touch.clientY });
@@ -343,10 +353,8 @@ export default function HouseScene() {
     setDropActive(false);
     setTouchPoint(null);
     if (!dropped) return;
-    if (payload.kind === "feed" && canFeed(payload.type)) {
+    if (canFeed(payload.type)) {
       feed(payload.type);
-    } else if (payload.kind === "reward") {
-      selectReward(payload.type);
     }
   }
 
@@ -372,6 +380,8 @@ export default function HouseScene() {
         // 다른 곳을 보고 있는 사이에 지나가 버리면 다시 볼 방법이 없다.
         // 확인 버튼을 눌러야만 닫힌다.
         setCelebrating(true);
+      } else {
+        setGrownPet(result.pet);
       }
       await refresh();
     }
@@ -395,6 +405,13 @@ export default function HouseScene() {
     pet.feedRequired !== null &&
     pet.feedCount >= pet.feedRequired;
 
+  const visibleFeedCount =
+    pet &&
+    feedProgressPreview?.petId === pet.id &&
+    feedProgressPreview.stage === pet.stage
+      ? feedProgressPreview.count
+      : pet?.feedCount ?? 0;
+
   // 이전 버전에서 이미 조건을 채운 채 남은 개체도 버튼 없이 자동 진화시킨다.
   useEffect(() => {
     if (!canEvolve || !pet || autoEvolvingPetRef.current === pet.id) return;
@@ -404,12 +421,9 @@ export default function HouseScene() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canEvolve, pet?.id]);
 
-  const dragGhostIcon =
-    dragPayload?.kind === "feed"
-      ? (FEEDS.find((f) => f.type === dragPayload.type)?.icon ?? null)
-      : dragPayload?.kind === "reward"
-        ? eggSprite(dragPayload.type)
-        : null;
+  const dragGhostIcon = dragPayload
+    ? (FEEDS.find((f) => f.type === dragPayload.type)?.icon ?? null)
+    : null;
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-6 text-slate-100">
@@ -424,12 +438,6 @@ export default function HouseScene() {
         <div className="absolute inset-0 bg-slate-950/70" />
 
         <div className="relative space-y-6 p-6">
-          {feedback ? (
-            <p className="rounded-2xl border border-amber-400/40 bg-amber-400/10 px-4 py-2 text-center text-sm text-amber-100">
-              {feedback}
-            </p>
-          ) : null}
-
           {displayPet === null ? (
             <div className="rounded-[28px] border border-slate-800/90 bg-slate-900/90 p-6 text-center">
               <p className="text-sm text-slate-400">
@@ -473,13 +481,13 @@ export default function HouseScene() {
                     <p className="house-stage-card-count mt-2 text-sm">
                       {pet.feedRequired === null
                         ? pet.speciesName ?? "완성"
-                        : `${pet.feedCount} / ${pet.feedRequired}회`}
+                        : `${visibleFeedCount} / ${pet.feedRequired}회`}
                     </p>
                     {pet.feedRequired !== null ? (
                       <div className="house-stage-progress" aria-hidden="true">
                         <span
                           style={{
-                            width: `${Math.min(100, (pet.feedCount / pet.feedRequired) * 100)}%`,
+                            width: `${Math.min(100, (visibleFeedCount / pet.feedRequired) * 100)}%`,
                           }}
                         />
                       </div>
@@ -532,8 +540,8 @@ export default function HouseScene() {
                       ? "새로운 성장 단계로 진화하고 있습니다!"
                       : "아래 먹이를 개체 위로 드래그해서 놓으면 급여됩니다."
                     : isFinalStage
-                      ? "아래 알 보상을 클릭하거나 개체 위로 드래그해서 골라 보세요."
-                      : "알을 부화시켜 다음 개체를 키워 보세요."}
+                      ? "알을 선택하세요"
+                      : ""}
                 </p>
               </div>
 
@@ -552,7 +560,7 @@ export default function HouseScene() {
                       onTouchCancel={endDrag}
                       style={{ touchAction: "none" }}
                       className={`relative h-24 w-24 cursor-grab rounded-[24px] border border-slate-700/90 bg-slate-900/90 p-2 transition hover:scale-105 ${f.ring} active:cursor-grabbing active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 ${
-                        dragPayload?.kind === "feed" && dragPayload.type === f.type ? "opacity-35" : ""
+                        dragPayload?.type === f.type ? "opacity-35" : ""
                       }`}
                       disabled={busy || resources[f.type] <= 0 || canEvolve}
                       title={`${f.label} — 개체 위로 드래그하세요`}
@@ -580,22 +588,14 @@ export default function HouseScene() {
                     <button
                       key={type}
                       type="button"
-                      draggable={!busy}
-                      onDragStart={(event) => handleDragStart(event, { kind: "reward", type })}
-                      onDragEnd={endDrag}
-                      onTouchStart={(event) => handleDragTouchStart(event, { kind: "reward", type })}
-                      onTouchMove={handleDragTouchMove}
-                      onTouchEnd={handleDragTouchEnd}
-                      onTouchCancel={endDrag}
-                      style={{ touchAction: "none" }}
                       onClick={() => selectReward(type)}
                       disabled={busy}
-                      className={`relative h-24 w-24 cursor-grab rounded-[24px] border p-2 transition hover:scale-105 active:cursor-grabbing active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 ${
+                      className={`relative h-24 w-24 rounded-[24px] border p-2 transition hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 ${
                         selectedReward === type
                           ? "border-amber-300 bg-amber-400/15 ring-2 ring-amber-300"
                           : "border-slate-700/90 bg-slate-900/90 hover:border-amber-300/60"
-                      } ${dragPayload?.kind === "reward" && dragPayload.type === type ? "opacity-35" : ""}`}
-                      title={`${EGG_LABEL[type]} 알 — 클릭하거나 개체 위로 드래그해서 선택`}
+                      }`}
+                      title={`${EGG_LABEL[type]} 알 선택`}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
@@ -673,7 +673,7 @@ export default function HouseScene() {
         closeOnBackdrop={false}
         closeOnEscape={false}
       >
-        <div className="evolution-celebrate">
+        <div className="evolution-celebrate pet-event-celebrate adult-celebrate">
           <p className="evolution-celebrate-kicker">최종 성장 완료</p>
           <h2 className="evolution-celebrate-title">{lastAdultPet?.speciesName ?? STAGE_NAME[FINAL_GROWTH_STAGE]}</h2>
           <div className="evolution-celebrate-portrait">
@@ -695,8 +695,73 @@ export default function HouseScene() {
         </div>
       </Modal>
 
-      {/* 알 획득 연출. 성체 완성 연출과 같은 틀을 쓴다 — 둘 다 "받았다"는 것을
-          알리는 같은 성격의 순간이고, 생김새가 갈리면 오히려 산만하다. */}
+      <Modal
+        open={grownPet !== null}
+        onClose={() => setGrownPet(null)}
+        closeOnBackdrop={false}
+        closeOnEscape={false}
+      >
+        {grownPet ? (
+          <div className="evolution-celebrate pet-event-celebrate growth-celebrate">
+            <p className="evolution-celebrate-kicker">성장 완료</p>
+            <h2 className="evolution-celebrate-title">성장기로 진화했어요!</h2>
+            <div className="evolution-celebrate-portrait growth-celebrate-portrait">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={petSprite(grownPet)}
+                alt="성장기로 진화한 펫"
+                style={{ imageRendering: "pixelated" }}
+              />
+            </div>
+            <p className="evolution-celebrate-copy">
+              새로운 모습으로 성장했습니다. 계속 먹이를 주며 돌봐주세요.
+            </p>
+            <button
+              type="button"
+              className="evolution-celebrate-button"
+              onClick={() => setGrownPet(null)}
+            >
+              확인
+            </button>
+          </div>
+        ) : null}
+      </Modal>
+
+      <Modal
+        open={hatchedPet !== null}
+        onClose={() => setHatchedPet(null)}
+        closeOnBackdrop={false}
+        closeOnEscape={false}
+      >
+        {hatchedPet ? (
+          <div className="evolution-celebrate pet-event-celebrate hatch-celebrate">
+            <p className="evolution-celebrate-kicker">새로운 탄생</p>
+            <h2 className="evolution-celebrate-title">
+              {hatchedPet.isAlbino ? "알비노 펫이 태어났어요!" : "펫이 태어났어요!"}
+            </h2>
+            <div className="evolution-celebrate-portrait hatch-celebrate-portrait">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={petSprite(hatchedPet)}
+                alt={`${EGG_LABEL[hatchedPet.eggType]} 알에서 태어난 펫`}
+                style={{ imageRendering: "pixelated" }}
+              />
+            </div>
+            <p className="evolution-celebrate-copy">
+              {EGG_LABEL[hatchedPet.eggType]} 알에서 새로운 친구가 태어났습니다.
+            </p>
+            <button
+              type="button"
+              className="evolution-celebrate-button"
+              onClick={() => setHatchedPet(null)}
+            >
+              만나러 가기
+            </button>
+          </div>
+        ) : null}
+      </Modal>
+
+      {/* 알 획득 연출. 집 이벤트의 원목 틀을 공유하되 알 전용 색감을 쓴다. */}
       <Modal
         open={rewardReveal !== null}
         onClose={closeRewardReveal}
@@ -705,7 +770,7 @@ export default function HouseScene() {
         closeOnEscape={false}
       >
         {rewardReveal ? (
-          <div className="evolution-celebrate">
+          <div className="evolution-celebrate pet-event-celebrate egg-reward-celebrate">
             <p className="evolution-celebrate-kicker">알 획득</p>
             <h2 className="evolution-celebrate-title">
               {rewardRevealed && rewardReveal.transformed

@@ -38,6 +38,13 @@ export default function MailboxScene() {
     // 마운트 시 1회 로드. setState 는 await 이후에만 일어나 실제 연쇄 렌더는 없다.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void load();
+
+    // 창을 계속 켜 둔 상태에서도 다른 사람이 남긴 글이 보이도록 1분마다 새로고침한다.
+    // 새로 고치는 동안에도 message(작성 중인 글)는 건드리지 않는다.
+    const interval = window.setInterval(() => {
+      void load();
+    }, 60_000);
+    return () => window.clearInterval(interval);
   }, [load]);
 
   const sortedEntries = useMemo(

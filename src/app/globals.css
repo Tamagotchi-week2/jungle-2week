@@ -254,6 +254,32 @@ button {
 @keyframes app-modal-fade-in { from { opacity:0; } to { opacity:1; } }
 @keyframes app-modal-pop-in { from { opacity:0; transform:scale(.92) translateY(8px); } to { opacity:1; transform:scale(1) translateY(0); } }
 
+/* 마을 씬 공용 닫기 — 글자형 버튼 대신 게임 창의 픽셀 닫기 아이콘을 쓴다. */
+.village-scene-close {
+  position:fixed;
+  top:clamp(12px,2vw,24px);
+  right:clamp(12px,2vw,24px);
+  z-index:60;
+  width:48px;
+  height:48px;
+  display:grid;
+  place-items:center;
+  padding:0 0 4px;
+  border:4px solid #4b1715;
+  border-radius:3px;
+  background:linear-gradient(#df554b 0 47%,#bd342e 48% 100%);
+  box-shadow:inset 0 0 0 2px #ff8d7f,4px 4px 0 rgba(26,8,8,.75);
+  color:#fff;
+  font-family:var(--font-dunggeunmo),"DungGeunMo",monospace;
+  font-size:34px;
+  line-height:1;
+  text-shadow:2px 2px 0 #7b1f1b;
+  transition:filter .12s,transform .12s,box-shadow .12s;
+}
+.village-scene-close:hover { filter:brightness(1.12); transform:translate(-1px,-1px); }
+.village-scene-close:active { transform:translate(3px,3px); box-shadow:inset 0 0 0 2px #ff8d7f,1px 1px 0 rgba(26,8,8,.75); }
+.village-scene-close:focus-visible { outline:3px solid #fff3bd; outline-offset:3px; }
+
 /* 확인/취소형 다이얼로그 — window.confirm 대체 */
 .confirm-dialog { display:grid; gap:clamp(.9rem,2.4vw,1.2rem); text-align:center; }
 .confirm-dialog-message { margin:0; font-size:clamp(.9rem,2.4vw,1.05rem); line-height:1.6; }
@@ -318,6 +344,119 @@ button {
 .evolution-celebrate-copy { margin:0; font-size:clamp(.78rem,2vw,.95rem); color:#cbd5e1; }
 .evolution-celebrate-button { margin-top:.4rem; padding:.65rem 1.6rem; border-radius:999px; border:1px solid rgba(251,191,36,.6); background:rgba(251,191,36,.18); color:#fef3c7; font-weight:700; font-size:.85rem; transition:transform .12s,background-color .12s; }
 .evolution-celebrate-button:hover { background:rgba(251,191,36,.28); transform:translateY(-1px); }
+.hatch-celebrate-portrait {
+  background:radial-gradient(circle at center,#fff4b0 0 16%,#7fae55 17% 42%,#315f38 43% 100%);
+  border-color:#d9ef82;
+  box-shadow:inset 0 0 0 4px #9dc75a,0 0 24px rgba(220,244,128,.72);
+  animation:hatch-celebrate-pop .9s steps(6,end),house-final-glow 2.2s ease-in-out .9s infinite;
+}
+.hatch-celebrate-portrait img { animation:hatch-pet-arrive .9s steps(6,end); }
+.growth-celebrate-portrait {
+  background:radial-gradient(circle at center,#fff1a0 0 14%,#80b65c 15% 40%,#315e37 41% 100%);
+  border-color:#d8ed7b;
+  box-shadow:inset 0 0 0 4px #9bc65a,0 0 28px rgba(223,244,122,.76);
+  animation:growth-celebrate-flash 1s steps(7,end),house-final-glow 2.2s ease-in-out 1s infinite;
+}
+.growth-celebrate-portrait img { animation:growth-pet-transform 1s steps(7,end); }
+
+/* 집에서 일어나는 탄생·성장 이벤트 — 원목 액자와 숲빛 종이로 통일한다. */
+.app-modal-card:has(.pet-event-celebrate) {
+  width:min(92vw,570px);
+  overflow:visible;
+  padding:clamp(1.2rem,4vw,2rem);
+  border:7px solid #3f2715;
+  border-radius:12px;
+  background:
+    radial-gradient(circle at 12px 12px,rgba(255,244,190,.08) 0 2px,transparent 2.5px) 0 0/24px 24px,
+    linear-gradient(145deg,#315b36,#1d4028 58%,#173321);
+  box-shadow:
+    inset 0 0 0 3px #b9783f,
+    inset 0 0 0 7px #754522,
+    inset 0 0 36px rgba(7,25,13,.7),
+    0 7px 0 #25170e,
+    0 24px 70px rgba(0,0,0,.62);
+  color:#fff6d8;
+}
+.pet-event-celebrate {
+  --event-accent:#f5ce58;
+  --event-light:#fff1a4;
+  width:100%;
+  gap:clamp(.65rem,2vw,1rem);
+  font-family:var(--font-dunggeunmo),"DungGeunMo",monospace;
+}
+.pet-event-celebrate.growth-celebrate { --event-accent:#b9dc67; --event-light:#efffa1; }
+.pet-event-celebrate.hatch-celebrate { --event-accent:#e6e87a; --event-light:#ffffbd; }
+.pet-event-celebrate.egg-reward-celebrate { --event-accent:#8edcf2; --event-light:#d8f7ff; }
+.pet-event-celebrate .evolution-celebrate-kicker {
+  padding:.42rem 1.1rem;
+  border:3px solid #4a2a15;
+  border-radius:6px;
+  background:linear-gradient(#b9753f 0 46%,#945329 47% 100%);
+  box-shadow:inset 0 0 0 2px #d69a63,0 3px 0 #2d190e;
+  color:#fff5d4;
+  letter-spacing:.2em;
+  text-shadow:2px 2px 0 #5b321b;
+}
+.pet-event-celebrate .evolution-celebrate-title {
+  color:#fff8dc;
+  text-shadow:3px 3px 0 #152b1b;
+}
+.pet-event-celebrate .evolution-celebrate-portrait {
+  width:min(55vw,230px);
+  height:min(55vw,230px);
+  border:6px solid #4a2b17;
+  border-radius:8px;
+  outline:3px solid var(--event-accent);
+  outline-offset:-10px;
+  background:radial-gradient(circle,#5d8b4e 0 38%,#315d39 39% 68%,#24452e 69%);
+  box-shadow:inset 0 0 0 10px #a76632,0 0 24px color-mix(in srgb,var(--event-accent) 55%,transparent),0 5px 0 #29180d;
+}
+.egg-reward-celebrate .evolution-celebrate-portrait {
+  background:
+    radial-gradient(circle at 50% 56%,#8bd3d8 0 22%,#397e79 23% 48%,#24574a 49% 70%,#193d2f 71%),
+    #244d39;
+  box-shadow:inset 0 0 0 10px #a76632,0 0 30px rgba(112,222,240,.6),0 5px 0 #29180d;
+}
+.egg-reward-celebrate .evolution-celebrate-portrait img { padding:8%; }
+.egg-reward-celebrate .egg-reveal-gold {
+  outline-color:#ffe56a;
+  background:radial-gradient(circle,#fff5a6 0 22%,#c8982d 23% 48%,#76501a 49% 70%,#3f2912 71%);
+  box-shadow:inset 0 0 0 10px #a76632,0 0 38px 10px rgba(255,215,64,.72),0 5px 0 #29180d;
+}
+.pet-event-celebrate .evolution-celebrate-copy {
+  max-width:460px;
+  padding:.7rem 1rem;
+  border:3px solid #6c4928;
+  border-radius:5px;
+  background:#f5e7bd;
+  box-shadow:inset 0 0 0 2px #fff5d6,0 3px 0 #342112;
+  color:#513822;
+  line-height:1.65;
+  text-shadow:none;
+}
+.pet-event-celebrate .evolution-celebrate-button {
+  min-width:138px;
+  margin-top:.2rem;
+  padding:.72rem 1.5rem;
+  border:4px solid #402615;
+  border-radius:7px;
+  background:linear-gradient(#75964b 0 48%,#58783a 49% 100%);
+  box-shadow:inset 0 0 0 2px #a9c86b,0 4px 0 #28170d;
+  color:#fff8dc;
+  text-shadow:2px 2px 0 #334522;
+}
+.pet-event-celebrate .evolution-celebrate-button:hover {
+  background:linear-gradient(#86aa56 0 48%,#668945 49% 100%);
+  transform:translateY(-1px);
+}
+.pet-event-celebrate .evolution-celebrate-button:active {
+  transform:translateY(3px);
+  box-shadow:inset 0 0 0 2px #a9c86b,0 1px 0 #28170d;
+}
+@keyframes hatch-celebrate-pop { 0% { opacity:0; transform:scale(.58); filter:brightness(2); } 55% { opacity:1; transform:scale(1.08); } 100% { transform:scale(1); filter:brightness(1); } }
+@keyframes hatch-pet-arrive { 0%,28% { opacity:0; transform:translateY(18px) scale(.72); } 72% { opacity:1; transform:translateY(-4px) scale(1.06); } 100% { transform:none; } }
+@keyframes growth-celebrate-flash { 0% { opacity:0; filter:brightness(2.5); transform:scale(.72); } 48% { opacity:1; filter:brightness(1.7); transform:scale(1.1); } 100% { filter:brightness(1); transform:none; } }
+@keyframes growth-pet-transform { 0%,25% { opacity:0; transform:scale(.6); } 60% { opacity:1; transform:scale(1.12); } 100% { transform:none; } }
 
 /* Trade display: muted field-guide paper, keeping the existing structure intact. */
 .trade-console { overflow:hidden; padding:clamp(.7rem,2.2vw,1.25rem); color:#514837; border:4px solid #655b49; border-radius:5px; background:linear-gradient(135deg,#e7dfc5,#d7cfb5); box-shadow:inset 0 0 0 2px #f4efd9, inset 0 0 0 6px #a69b7e, 0 5px 0 #494235; }
@@ -508,15 +647,19 @@ button {
 .shore-layout {
   height:100%;
   display:grid;
-  grid-template-rows:150px minmax(300px,1fr) 118px 46px;
+  grid-template-rows:150px minmax(300px,1fr) 118px;
   gap:1rem;
+  padding:1.5rem 0;
 }
 .shore-status-card,
 .shore-action-card {
   overflow:hidden;
   border:5px solid #4c321b;
   border-radius:7px;
-  background:linear-gradient(rgba(62,37,18,.08),rgba(62,37,18,.08)),url("/sprites/house/wood-card-brown.png") center/cover;
+  background-image:linear-gradient(rgba(62,37,18,.08),rgba(62,37,18,.08)),url("/sprites/house/wood-card-brown.png");
+  background-position:center,center;
+  background-repeat:no-repeat,no-repeat;
+  background-size:auto,106% auto;
   color:#fff1c8;
   box-shadow:inset 0 0 0 2px #d0934d,4px 4px 0 rgba(27,17,9,.5);
   text-shadow:2px 2px 0 #402414;
@@ -569,20 +712,11 @@ button {
   box-shadow:inset 0 -2px 0 #ba7c31,2px 2px 0 #382113;
   text-shadow:1px 1px 0 #fff0b0;
 }
-.shore-feedback {
-  min-height:46px;
-  visibility:hidden;
-  color:#f5efcc;
-  text-align:center;
-  border:3px solid #31512d;
-  border-radius:5px;
-  background:rgba(36,81,49,.9);
-  box-shadow:inset 0 0 0 2px #729457;
-}
-.shore-feedback-visible { visibility:visible; }
+.shore-action-result { color:#fff3ad; text-shadow:2px 2px 0 #51301a; animation:shore-result-pop .3s steps(3,end); }
+@keyframes shore-result-pop { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:none; } }
 @media (max-height:760px) {
   .shore-stage { height:600px; min-height:600px; }
-  .shore-layout { grid-template-rows:125px minmax(260px,1fr) 100px 40px; gap:.65rem; padding:1rem; }
+  .shore-layout { grid-template-rows:125px minmax(260px,1fr) 100px; gap:.65rem; padding:1rem 0; }
   .shore-sprite-space { height:220px; width:220px; }
 }
 

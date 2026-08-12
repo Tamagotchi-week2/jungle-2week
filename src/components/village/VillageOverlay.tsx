@@ -29,7 +29,7 @@ export default function VillageOverlay({ activeScene, onClose }: VillageOverlayP
       case "dex":
         return <DexScene />;
       case "trade":
-        return <TradeSceneContainer onClose={onClose} />;
+        return <TradeSceneContainer />;
       default:
         return null;
     }
@@ -42,10 +42,12 @@ export default function VillageOverlay({ activeScene, onClose }: VillageOverlayP
       <SceneFrame>{renderScene()}</SceneFrame>
       <button
         type="button"
-        className="fixed top-6 right-6 z-50 rounded-2xl border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-slate-100 transition hover:border-slate-400"
+        className="village-scene-close"
         onClick={onClose}
+        aria-label="화면 닫기"
+        title="닫기 (ESC)"
       >
-        닫기 (ESC)
+        ×
       </button>
     </div>
   );
