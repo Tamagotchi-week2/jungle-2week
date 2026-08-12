@@ -108,7 +108,7 @@
 - 주기가 **120초**인 이유는 조작 빈도와 이동 비용이다. 짧은 주기는 다시 신경 써야 하는 간격이 잦고, 마을 필드(4장)가 추가되면서 논까지 왕복하는 비용까지 붙었다. 수확량을 함께 올려 **분당 산출 6.0개는 유지**하면서 논 방문 빈도만 낮췄다
 - **농사 대기 120초 동안 광산·어업을 병행할 수 있다.** 대기가 빈 시간이 되지 않고, 세 채집을 섞어 쓰는 것이 최적 플레이가 되어 성향 편중도 완화된다
 - **부작용 — 초반 체감.** 첫 수확까지 2분이 걸리고 12개씩 뭉텅이로 들어오므로, 순수 a 빌드의 이론 완성 시간은 4.2분이지만 실제로는 수확 단위에 걸려 6분(3회 수확)이 된다. 게임 시작 직후 논에 먼저 심어두는 것이 자연스러운 동선이므로, 마을 진입 위치를 논 근처로 두어 완화한다
-- 어업 QTE 실패 시 산출 0. 이는 육성 실패(6장의 "실패 없음")와 무관한 채집 결과일 뿐이다
+- 어업 QTE 실패 시 산출 0. 이는 육성 실패(5장의 "실패 없음")와 무관한 채집 결과일 뿐이다
 
 #### 서버 검증
 
@@ -406,11 +406,11 @@ POST /api/gather/fish/strike { sessionId, reactionMs }
 
 ```
 POST /api/egg/reward/open
-  → 서버가 롤 수행, 결과를 pending_reward 로 저장
+  → 서버가 롤 수행, 결과를 pending_reward_is_gold 로 저장
   → 응답에는 선택지(air/land/sea)만 포함. 판정 결과는 절대 포함하지 않는다
 
 POST /api/egg/reward/claim { chosen: 'air' | 'land' | 'sea' }
-  → 저장된 pending_reward 를 확정하여 인벤토리 반영
+  → 저장된 pending_reward_is_gold 를 확정하여 인벤토리 반영
   → 응답으로 최종 알 종류(금색 여부) 반환 → 클라이언트가 연출 재생
 ```
 
@@ -476,7 +476,7 @@ POST /api/egg/reward/claim { chosen: 'air' | 'land' | 'sea' }
 | 테이블 | 핵심 컬럼 |
 |---|---|
 | `users` | id, nickname, password_hash, created_at, first_adult_reward_claimed, pending_reward_is_gold, unclaimed_rewards |
-| ↳ | `pending_reward` 는 계정당 1건만 존재한다. 이미 존재하는 상태에서 `open` 이 다시 호출되면 새로 롤하지 않고 기존 건을 반환한다 (재롤 방지) |
+| ↳ | `pending_reward_is_gold` 는 계정당 1건만 존재한다(판정 전이면 `null`). 이미 존재하는 상태에서 `open` 이 다시 호출되면 새로 롤하지 않고 기존 건을 반환한다 (재롤 방지) |
 | `species` | id, egg_type, combo, name — **24행 고정 마스터** (스프라이트 경로는 규칙으로 도출) |
 | `user_eggs` | user_id, egg_type, count |
 | `pets` | id, owner_id, egg_type, stage, is_albino, trait_a/b/c, feed_count, last_fed_seq_a/b/c, stage2_trait, species_id, is_traded, locked_by_trade_id |
@@ -486,6 +486,7 @@ POST /api/egg/reward/claim { chosen: 'air' | 'land' | 'sea' }
 | `inventory` | user_id, resource_type, count |
 | `farm_plots` | user_id, planted_at, harvested |
 | `gather_sessions` | user_id, kind(mine/fish), started_at, bite_delay, resolved |
+| ↳ | 어업은 `cast` 시점에 서버가 만들고 `strike` 때 판정에 쓴다 — `started_at`이 실제 시작 시각이다. 광산은 `finish` 한 번에 생성과 동시에 `resolved=true` 로 확정되고 `id` 도 클라이언트가 보낸 값을 그대로 쓴다(3.2) — **같은 시도의 재전송만 막을 뿐**, `started_at`은 판정에 쓰이지 않는다 |
 | `dex_entries` | user_id, species_id, has_normal, has_albino — (user, species) 유니크 |
 | `trades` | id, code, expires_at, from_user, to_user, from_pet, to_pet, status, resolved_at — `status` 는 proposed / joined / accepted / rejected / cancelled(만료 포함) |
 | `guestbook_entries` | id, author_user_id, message, created_at — **전역 게시판**(수신자 없음). `created_at` 내림차순 인덱스 |
@@ -566,7 +567,6 @@ Next.js (App Router) + TypeScript      프론트/백 단일 저장소
 Postgres (Neon) + Prisma               교환 트랜잭션, 도감 유니크 제약
 Tailwind CSS + CSS keyframes           도감 그리드, 플립 카드, 변신 연출
 Auth.js                                간이 로그인 1종만
-TanStack Query                         서버 상태 캐싱
 Vitest                                 진화 엔진 테스트
 Vercel                                 배포
 ```
@@ -575,8 +575,9 @@ Vercel                                 배포
 
 - **게임 엔진(Phaser/PixiJS/Unity) 미사용.** 마을 필드가 추가되었지만 물리·스크롤·적이 없는 단일 화면 타일맵이라 엔진의 이점이 거의 없고, 나머지 UI가 전부 React이므로 캔버스와의 연결 비용이 더 크다. 상세 근거는 4.3 참조.
 - **관계형 DB 필수.** 교환의 원자성과 도감 유니크 제약 때문에 문서형 DB(Firestore)는 부적합하다.
-- **전역 상태 관리 라이브러리(Zustand 등) 미사용.** 모든 상태는 서버에 있고 클라이언트는 표시만 한다. TanStack Query 캐시가 곧 상태이며, 별도 스토어를 두면 진실이 두 개가 되어 동기화 버그만 늘어난다.
-- 실시간 통신은 1차 버전에서 **3초 폴링**으로 대체 (필요 시 WebSocket 교체)
+- **전역 상태 관리 라이브러리(Zustand 등) 미사용.** 모든 상태는 서버에 있고 클라이언트는 표시만 한다. 서버 상태는 손으로 짠 `MeContext`(React Context + `fetch`) 가 들고 있으며, 별도 스토어를 두면 진실이 두 개가 되어 동기화 버그만 늘어난다.
+- **`@tanstack/react-query` 는 의존성에는 있지만 아직 채택하지 않았다.** 지금은 각 화면이 액션 후 `refresh()`(전체 재조회) 또는 `applyResources()`(응답을 그대로 로컬 상태에 반영, 재조회 생략)를 필요에 따라 골라 쓴다. 요청 수를 줄이려는 목적은 같지만 캐싱·재검증 정책은 아직 라이브러리가 아니라 각 화면이 직접 판단한다.
+- 실시간 통신은 1차 버전에서 **2초 폴링**으로 대체 (필요 시 WebSocket 교체)
 - 렌더링: 픽셀 폰트 + `image-rendering: pixelated` + 제한된 팔레트
 
 ### 서버리스 요청량
@@ -686,7 +687,7 @@ heartbeat를 사용하지 않으므로(5장) 주기적 요청이 없다. 서버 
 | 성장 시간 스킵 | 성장 진행도를 시간이 아닌 먹이 횟수로 정의 |
 | 교환 중 펫 복제/증발 | 단일 트랜잭션 + 개체 잠금 |
 | 교환 무한 순환으로 도감 속성 | 개체당 1회 교환 제한 |
-| 보상 알 재롤 | `pending_reward` 존재 시 재롤 없이 기존 건 반환 |
+| 보상 알 재롤 | `pending_reward_is_gold` 존재 시 재롤 없이 기존 건 반환 |
 | **타인 명의 행위** (교환·먹이·채집 전부) | **행위자를 요청 바디가 아닌 서버 세션에서 도출** |
 | 미인증 상태로 API 직접 호출 | 미들웨어에서 `/game` 및 전 API 인증 게이트 |
 | 방명록 작성자 위조 | 작성자를 세션에서 도출 |
@@ -898,7 +899,7 @@ heartbeat를 사용하지 않으므로(5장) 주기적 요청이 없다. 서버 
 - 작성자는 **세션에서 도출**한다. 요청 바디의 작성자 정보를 신뢰하지 않는다
 - 삭제 시에도 세션 사용자와 `author_user_id` 일치를 검증한다
 - React가 기본 이스케이프하므로 XSS는 자동 방어되지만, **`dangerouslySetInnerHTML` 을 쓰지 않는다**는 원칙을 유지한다
-- 전역 게시판이므로 폴링으로 갱신한다. 우편함 오버레이가 열려 있는 동안에만 10초 간격으로 조회하고, 닫으면 중단한다
+- 전역 게시판이므로 폴링으로 갱신한다. 우편함 오버레이가 열려 있는 동안에만 1분(60초) 간격으로 조회하고, 닫으면 중단한다
 
 ### 17.6 프로젝트 명칭
 
