@@ -201,6 +201,34 @@ suite('서비스 계층 통합', () => {
       expect(adult.pet.speciesName).toBe('고양이');
     });
 
+    it('진화 요청이 동시에 겹쳐도 보상은 한 번만 늘어난다', async () => {
+      const userId = await newUser();
+      await giveEgg(userId, 'air');
+      await fillResources(userId);
+      const { pet } = await hatchEgg(userId, 'air');
+      await raiseOneStage(userId, pet.id, 'crop', BALANCE.STAGE2_FEED_COUNT); // -> 성장기
+
+      // 성체 직전까지만 먹이고, evolvePet 은 아직 부르지 않는다 — 여기서
+      // 동시에 두 번 쏴서 트랜잭션이 같은 stage 를 읽고 겹치는 경합을 만든다.
+      for (let i = 0; i < BALANCE.STAGE3_FEED_COUNT; i += 1) {
+        await feedPet(userId, pet.id, 'crop');
+      }
+
+      const results = await Promise.allSettled([
+        evolvePet(userId, pet.id),
+        evolvePet(userId, pet.id),
+      ]);
+
+      const fulfilled = results.filter((r) => r.status === 'fulfilled');
+      const rejected = results.filter((r) => r.status === 'rejected');
+      // 낙관적 잠금(WHERE stage=...) 이 없으면 둘 다 성공해 보상이 2로 뛴다.
+      expect(fulfilled).toHaveLength(1);
+      expect(rejected).toHaveLength(1);
+
+      const me = await getMeSnapshot(userId);
+      expect(me.unclaimedRewards).toBe(1);
+    });
+
     it('육성 중인 개체가 있으면 새로 부화할 수 없다', async () => {
       const userId = await newUser();
       await giveEgg(userId, 'air');

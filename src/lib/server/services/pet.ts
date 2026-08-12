@@ -166,6 +166,14 @@ export async function feedPet(
  *
  * 성체 전환의 세 가지는 반드시 한 트랜잭션이다. 갈라지면 도감에 없는 성체나
  * 받을 수 없는 보상이 생긴다.
+ *
+ * **낙관적 잠금.** 같은 개체에 진화 요청 두 개가 겹치면, 둘 다 트랜잭션 시작
+ * 시점의 stage 를 읽고 둘 다 canEvolve 를 통과할 수 있다. 뒤에 실행되는
+ * 쪽이 그대로 UPDATE 하면 unclaimedRewards 가 두 번 늘어난다(성체 전환의
+ * 경우). 그래서 UPDATE 의 WHERE 에 방금 읽은 stage 를 함께 건다 — Postgres
+ * 는 READ COMMITTED 에서도 락에 걸려 대기하던 UPDATE 가 풀리면 WHERE 를
+ * 커밋된 최신 행으로 다시 평가하므로, 먼저 커밋된 쪽만 실제로 갱신되고
+ * 나중 것은 대상 행이 0개가 되어 안전하게 걸러진다.
  */
 export async function evolvePet(
   userId: string,
@@ -194,9 +202,15 @@ export async function evolvePet(
     };
 
     if (next.stage === STAGE.TEEN) {
-      const updated = await tx.pet.update({
-        where: { id: petId },
+      const applied = await tx.pet.updateMany({
+        where: { id: petId, stage: pet.stage },
         data: { ...common, stage: next.stage, stage2Trait: next.stage2Trait },
+      });
+      if (applied.count === 0) {
+        throw new GameRuleError('이미 처리된 진화 요청이다');
+      }
+      const updated = await tx.pet.findUniqueOrThrow({
+        where: { id: petId },
         include: { species: true },
       });
       return {
@@ -215,9 +229,15 @@ export async function evolvePet(
       },
     });
 
-    const updated = await tx.pet.update({
-      where: { id: petId },
+    const applied = await tx.pet.updateMany({
+      where: { id: petId, stage: pet.stage },
       data: { ...common, stage: next.stage, speciesId: species.id },
+    });
+    if (applied.count === 0) {
+      throw new GameRuleError('이미 처리된 진화 요청이다');
+    }
+    const updated = await tx.pet.findUniqueOrThrow({
+      where: { id: petId },
       include: { species: true },
     });
 
