@@ -23,16 +23,16 @@ export const FACILITY_BY_TYPE: Record<FacilityType, {
   /** 셀 크기를 넘어 시각적으로 더 크게 그릴 배율. 앵커는 하단 중앙 */
   scale?: number;
 }> = {
-  house: { label: "House", scene: "house", icon: "🏠", image: "/sprites/buildings/house.png", scale: 1.8 },
-  mailbox: { label: "Mailbox", scene: "mailbox", icon: "✉️", image: "/sprites/buildings/mailbox.png" },
-  farm: { label: "Farm", scene: "farm", icon: "🌾", image: "/sprites/buildings/farm.png" },
-  mine: { label: "Mine", scene: "mine", icon: "⛏️", image: "/sprites/buildings/mine.png", scale: 1.6 },
-  shore: { label: "Shore", scene: "shore", icon: "🌊", image: "/sprites/buildings/shore.png" },
+  house: { label: "House", scene: "house", icon: "🏠", image: "/sprites/buildings/house.webp", scale: 1.8 },
+  mailbox: { label: "Mailbox", scene: "mailbox", icon: "✉️", image: "/sprites/buildings/mailbox.webp" },
+  farm: { label: "Farm", scene: "farm", icon: "🌾", image: "/sprites/buildings/farm.webp" },
+  mine: { label: "Mine", scene: "mine", icon: "⛏️", image: "/sprites/buildings/mine.webp", scale: 1.6 },
+  shore: { label: "Shore", scene: "shore", icon: "🌊", image: "/sprites/buildings/shore.webp" },
 };
 
 // ------------------------------------------------------- 배경 픽셀 좌표 매핑
 //
-// /sprites/backgrounds/village.png 원본 크기(1448x1086) 기준. .village-fit 이
+// /sprites/backgrounds/village.webp 원본 크기(1448x1086) 기준. .village-fit 이
 // aspect-ratio: 15/11 로 이 이미지를 꽉 채우므로, 격자 한 칸은 곧 이미지 위의
 // 고정된 픽셀 사각형이다.
 export const MAP_IMAGE_WIDTH = 1448;
@@ -71,7 +71,7 @@ function zone(name: BlockedZoneName, x0: number, y0: number, x1: number, y1: num
  * 맵은 기본적으로 전부 이동 가능하다. 아래 6종 요소만 예외적으로 막는다:
  * 울타리(fence) · 해변(beach) · 가장자리 나무(edgeTree) · 집(house) · 우편함(mailbox) · 광산(mine).
  *
- * 좌표는 /sprites/backgrounds/village.png(1448x1086) 픽셀 기준이며, 이름을 붙여 둬서
+ * 좌표는 /sprites/backgrounds/village.webp(1448x1086) 픽셀 기준이며, 이름을 붙여 둬서
  * 나중에 이 배열만 보고 좌표를 조정할 수 있다. VILLAGE_MAP.passable 은 전부 이 배열에서
  * 파생된다 — 별도로 손으로 유지하면 이동 로직과 실제 그림이 어긋날 수 있어 여기서만 정의한다.
  */

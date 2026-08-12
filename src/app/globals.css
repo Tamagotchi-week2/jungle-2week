@@ -129,7 +129,7 @@ button {
   border: 3px solid #3d2817;
   border-radius: 9999px;
   background: linear-gradient(rgba(74, 42, 20, 0.15), rgba(74, 42, 20, 0.15)),
-    url("/sprites/house/wood-card-brown.png") center/cover;
+    url("/sprites/house/wood-card-brown.webp") center/cover;
   box-shadow: inset 0 0 0 2px #d79b55, 3px 4px 0 rgba(19, 12, 7, 0.55);
   font-size: 0.95rem;
   transition: transform 0.12s ease, filter 0.12s ease;
@@ -570,7 +570,7 @@ button {
   padding:.7rem 1rem;
   border:3px solid #3d2817;
   border-radius:8px;
-  background:linear-gradient(rgba(74,42,20,.12),rgba(74,42,20,.12)),url("/sprites/house/wood-card-brown.png") center/cover;
+  background:linear-gradient(rgba(74,42,20,.12),rgba(74,42,20,.12)),url("/sprites/house/wood-card-brown.webp") center/cover;
   box-shadow:inset 0 0 0 2px #d79b55,4px 5px 0 rgba(19,12,7,.55);
   text-shadow:2px 2px 0 #432616;
 }
@@ -746,7 +746,7 @@ button {
   overflow:hidden;
   border:5px solid #4c321b;
   border-radius:7px;
-  background-image:linear-gradient(rgba(62,37,18,.08),rgba(62,37,18,.08)),url("/sprites/house/wood-card-brown.png");
+  background-image:linear-gradient(rgba(62,37,18,.08),rgba(62,37,18,.08)),url("/sprites/house/wood-card-brown.webp");
   background-position:center,center;
   background-repeat:no-repeat,no-repeat;
   background-size:auto,106% auto;
@@ -837,7 +837,7 @@ button {
   z-index: -2;
   inset: -6px;
   background-color: #173f16;
-  background-image: url("/sprites/backgrounds/village-surroundings.png");
+  background-image: url("/sprites/backgrounds/village-surroundings.webp");
   background-position: center;
   background-size: cover;
   background-repeat: no-repeat;
@@ -898,7 +898,7 @@ button {
 .village-hint-card {
   background-color: #9b5b31;
   background-image: linear-gradient(rgba(57, 27, 13, 0.13), rgba(57, 27, 13, 0.13)),
-    url("/sprites/house/wood-card-brown.png");
+    url("/sprites/house/wood-card-brown.webp");
   color: #fff8e8;
   text-shadow: 2px 2px 0 #4b2514, -1px -1px 0 #4b2514;
 }
@@ -907,7 +907,7 @@ button {
   border: 4px solid #4b2e17;
   border-radius:7px;
   background-color:#d9b273;
-  background-image:linear-gradient(rgba(75,43,20,.08),rgba(75,43,20,.08)),url("/sprites/house/wood-card-brown.png");
+  background-image:linear-gradient(rgba(75,43,20,.08),rgba(75,43,20,.08)),url("/sprites/house/wood-card-brown.webp");
   background-position:center;
   background-size:cover;
   color: #fff4d2;

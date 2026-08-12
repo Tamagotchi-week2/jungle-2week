@@ -33,8 +33,8 @@ const MINE_CLICK_TARGET = 20;
 // 밭 상태별 아이콘. 전용 empty/growing/ready 스프라이트가 없으므로 실제 존재하는 에셋으로 대체한다
 const FARM_ICON_BY_STATE = {
   empty: buildingSprite("farm"),
-  growing: "/sprites/farm/seed.png",
-  ready: "/sprites/farm/crop.png",
+  growing: "/sprites/farm/seed.webp",
+  ready: "/sprites/farm/crop.webp",
 };
 
 type Facing = Direction;
@@ -398,7 +398,7 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
       <div
         className="village-fit village-play-map relative bg-cover bg-center"
         style={{
-          backgroundImage: "url('/sprites/backgrounds/village.png')",
+          backgroundImage: "url('/sprites/backgrounds/village.webp')",
           imageRendering: "pixelated",
         }}
       >

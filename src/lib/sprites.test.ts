@@ -21,29 +21,29 @@ import { COMBOS, EGG_TYPES, TRAITS } from './game/types';
 
 describe('경로 규칙', () => {
   it('알 — 알비노 구분이 없다', () => {
-    expect(eggSprite('gold')).toBe('/sprites/egg/gold.png');
+    expect(eggSprite('gold')).toBe('/sprites/egg/gold.webp');
   });
 
   it('유아기', () => {
-    expect(babySprite('air', false)).toBe('/sprites/baby/air.png');
-    expect(babySprite('air', true)).toBe('/sprites/baby/air_albino.png');
+    expect(babySprite('air', false)).toBe('/sprites/baby/air.webp');
+    expect(babySprite('air', true)).toBe('/sprites/baby/air_albino.webp');
   });
 
   it('성장기', () => {
-    expect(teenSprite('land', 'b', false)).toBe('/sprites/teen/land_b.png');
-    expect(teenSprite('land', 'b', true)).toBe('/sprites/teen/land_b_albino.png');
+    expect(teenSprite('land', 'b', false)).toBe('/sprites/teen/land_b.webp');
+    expect(teenSprite('land', 'b', true)).toBe('/sprites/teen/land_b_albino.webp');
   });
 
   it('성체', () => {
-    expect(adultSprite('sea', 'ac', false)).toBe('/sprites/adult/sea_ac.png');
-    expect(adultSprite('sea', 'ac', true)).toBe('/sprites/adult/sea_ac_albino.png');
+    expect(adultSprite('sea', 'ac', false)).toBe('/sprites/adult/sea_ac.webp');
+    expect(adultSprite('sea', 'ac', true)).toBe('/sprites/adult/sea_ac_albino.webp');
   });
 
   it('마을 에셋', () => {
-    expect(playerSprite('down', 0)).toBe('/sprites/player/down_0.png');
-    expect(playerSprite('left', 2)).toBe('/sprites/player/left_2.png');
-    expect(tileSprite('grass')).toBe('/sprites/tiles/grass.png');
-    expect(buildingSprite('mailbox')).toBe('/sprites/buildings/mailbox.png');
+    expect(playerSprite('down', 0)).toBe('/sprites/player/down_0.webp');
+    expect(playerSprite('left', 2)).toBe('/sprites/player/left_2.webp');
+    expect(tileSprite('grass')).toBe('/sprites/tiles/grass.webp');
+    expect(buildingSprite('mailbox')).toBe('/sprites/buildings/mailbox.webp');
   });
 });
 
@@ -76,17 +76,17 @@ describe('물량', () => {
 describe('petSprite — 개체 상태로 경로 선택', () => {
   it('단계별로 알맞은 경로를 고른다', () => {
     expect(petSprite({ eggType: 'air', stage: 0, isAlbino: false })).toBe(
-      '/sprites/egg/air.png',
+      '/sprites/egg/air.webp',
     );
     expect(petSprite({ eggType: 'air', stage: 1, isAlbino: true })).toBe(
-      '/sprites/baby/air_albino.png',
+      '/sprites/baby/air_albino.webp',
     );
     expect(
       petSprite({ eggType: 'air', stage: 2, isAlbino: false, stage2Trait: 'c' }),
-    ).toBe('/sprites/teen/air_c.png');
+    ).toBe('/sprites/teen/air_c.webp');
     expect(
       petSprite({ eggType: 'air', stage: 3, isAlbino: false, combo: 'bc' }),
-    ).toBe('/sprites/adult/air_bc.png');
+    ).toBe('/sprites/adult/air_bc.webp');
   });
 
   it('알 단계는 알비노여도 같은 경로다 — 부화 전 결과 노출 방지', () => {

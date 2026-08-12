@@ -525,14 +525,14 @@ POST /api/egg/reward/claim { chosen: 'air' | 'land' | 'sea' }
 ### 경로 규칙
 
 ```
-/public/sprites/egg/{eggType}.png                          → 4
-/public/sprites/baby/{eggType}[_albino].png                → 8
-/public/sprites/teen/{eggType}_{trait}[_albino].png        → 24
-/public/sprites/adult/{eggType}_{combo}[_albino].png       → 48
+/public/sprites/egg/{eggType}.webp                          → 4
+/public/sprites/baby/{eggType}[_albino].webp                → 8
+/public/sprites/teen/{eggType}_{trait}[_albino].webp        → 24
+/public/sprites/adult/{eggType}_{combo}[_albino].webp       → 48
 
-/public/sprites/player/{dir}_{frame}.png                   → 8~12  (dir: up|down|left|right)
-/public/sprites/tiles/{name}.png                           → 10 내외
-/public/sprites/buildings/{house|farm|mine|shore}.png      → 4~8
+/public/sprites/player/{dir}_{frame}.webp                   → 8~12  (dir: up|down|left|right)
+/public/sprites/tiles/{name}.webp                           → 10 내외
+/public/sprites/buildings/{house|farm|mine|shore}.webp      → 4~8
 
 eggType : air | land | sea | gold
 trait   : a | b | c

@@ -233,7 +233,7 @@ export default function ShoreScene() {
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage: "url('/sprites/shore/bg.png')",
+            backgroundImage: "url('/sprites/shore/bg.webp')",
             imageRendering: "pixelated",
           }}
         />
@@ -278,10 +278,10 @@ export default function ShoreScene() {
               <div className="shore-sprite-space mx-auto flex h-[280px] w-[280px] items-center justify-center">
                 {state === "bite" ? (
                   <div className="animate-bounce">
-                    <img src="/sprites/shore/bobber.png" alt="Bobber" className="h-16 w-16 object-contain image-rendering-pixelated" draggable={false} />
+                    <img src="/sprites/shore/bobber.webp" alt="Bobber" className="h-16 w-16 object-contain image-rendering-pixelated" draggable={false} />
                   </div>
                 ) : (
-                  <img src="/sprites/shore/rod.png" alt="Fishing Rod" className="h-48 w-40 object-contain image-rendering-pixelated" draggable={false} />
+                  <img src="/sprites/shore/rod.webp" alt="Fishing Rod" className="h-48 w-40 object-contain image-rendering-pixelated" draggable={false} />
                 )}
               </div>
             </div>

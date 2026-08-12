@@ -14,9 +14,9 @@ import type { VillageScene } from "./types";
  * 알아보기 어렵다.
  */
 const RESOURCE_ICON: Record<ResourceType, string> = {
-  crop: "/sprites/house/crop.png",
-  mineral: "/sprites/house/mineral.png",
-  seafood: "/sprites/house/seafood.png",
+  crop: "/sprites/house/crop.webp",
+  mineral: "/sprites/house/mineral.webp",
+  seafood: "/sprites/house/seafood.webp",
 };
 
 const RESOURCE_LABEL: Record<ResourceType, string> = {

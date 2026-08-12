@@ -24,12 +24,12 @@ function albinoSuffix(isAlbino: boolean): string {
  * 알 그림이 갈리면 부화 전에 결과가 노출되어 1% 연출이 무너진다 (11장).
  */
 export function eggSprite(eggType: EggType): string {
-  return `${ROOT}/egg/${eggType}.png`;
+  return `${ROOT}/egg/${eggType}.webp`;
 }
 
 /** 유아기 (8장) */
 export function babySprite(eggType: EggType, isAlbino: boolean): string {
-  return `${ROOT}/baby/${eggType}${albinoSuffix(isAlbino)}.png`;
+  return `${ROOT}/baby/${eggType}${albinoSuffix(isAlbino)}.webp`;
 }
 
 /** 성장기 (24장) — 알 종류 × 성향 a/b/c × 알비노 */
@@ -38,7 +38,7 @@ export function teenSprite(
   trait: Trait,
   isAlbino: boolean,
 ): string {
-  return `${ROOT}/teen/${eggType}_${trait}${albinoSuffix(isAlbino)}.png`;
+  return `${ROOT}/teen/${eggType}_${trait}${albinoSuffix(isAlbino)}.webp`;
 }
 
 /** 성체 (48장) — 알 종류 × 조합 6종 × 알비노 */
@@ -47,7 +47,7 @@ export function adultSprite(
   combo: Combo,
   isAlbino: boolean,
 ): string {
-  return `${ROOT}/adult/${eggType}_${combo}${albinoSuffix(isAlbino)}.png`;
+  return `${ROOT}/adult/${eggType}_${combo}${albinoSuffix(isAlbino)}.webp`;
 }
 
 export interface PetSpriteState {
@@ -105,17 +105,17 @@ export type Direction = 'up' | 'down' | 'left' | 'right';
 
 /** 플레이어 걷기 프레임. frame 은 0부터 */
 export function playerSprite(dir: Direction, frame: number): string {
-  return `${ROOT}/player/${dir}_${frame}.png`;
+  return `${ROOT}/player/${dir}_${frame}.webp`;
 }
 
 /** 바닥·길·물 등 타일 */
 export function tileSprite(name: string): string {
-  return `${ROOT}/tiles/${name}.png`;
+  return `${ROOT}/tiles/${name}.webp`;
 }
 
 /** 마을 시설. 우편함은 집 앞에 놓인다 (4.2장) */
 export type BuildingName = 'house' | 'mailbox' | 'farm' | 'mine' | 'shore';
 
 export function buildingSprite(name: BuildingName): string {
-  return `${ROOT}/buildings/${name}.png`;
+  return `${ROOT}/buildings/${name}.webp`;
 }

@@ -38,9 +38,9 @@ const FEEDS: {
   ring: string;
   icon: string;
 }[] = [
-  { type: "crop", label: "작물", ring: "hover:border-emerald-300", icon: "/sprites/house/crop.png" },
-  { type: "mineral", label: "광물", ring: "hover:border-amber-300", icon: "/sprites/house/mineral.png" },
-  { type: "seafood", label: "어패", ring: "hover:border-sky-300", icon: "/sprites/house/seafood.png" },
+  { type: "crop", label: "작물", ring: "hover:border-emerald-300", icon: "/sprites/house/crop.webp" },
+  { type: "mineral", label: "광물", ring: "hover:border-amber-300", icon: "/sprites/house/mineral.webp" },
+  { type: "seafood", label: "어패", ring: "hover:border-sky-300", icon: "/sprites/house/seafood.webp" },
 ];
 
 const EGG_LABEL: Record<EggType, string> = {
@@ -447,7 +447,7 @@ export default function HouseScene() {
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage: "url('/sprites/house/bg.png')",
+            backgroundImage: "url('/sprites/house/bg.webp')",
             imageRendering: "pixelated",
           }}
         />
