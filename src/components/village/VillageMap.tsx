@@ -93,17 +93,18 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
 
   const [mineLoading, setMineLoading] = useState(false);
 
+  /**
+   * 상호작용 판정 범위: 바라보는 방향 한 칸 + 플레이어가 서있는 칸, 총 2칸.
+   * 바라보는 칸에 시설이 있으면 그쪽을 우선한다 — 다른 시설을 등지고 서있을 때
+   * 의도치 않게 발밑 시설이 반응하는 걸 막는다.
+   */
   const targetFacility = useMemo(() => {
     const delta = DIRECTION_VECTORS[facing];
-    const nextX = playerPosition.x + delta.dx;
-    const nextY = playerPosition.y + delta.dy;
-    const nextCell = getCellAt(nextX, nextY);
+    const nextCell = getCellAt(playerPosition.x + delta.dx, playerPosition.y + delta.dy);
+    const currentCell = getCellAt(playerPosition.x, playerPosition.y);
+    const facility = nextCell?.facility ?? currentCell?.facility;
 
-    if (!nextCell || !nextCell.facility) {
-      return null;
-    }
-
-    return FACILITY_BY_TYPE[nextCell.facility];
+    return facility ? FACILITY_BY_TYPE[facility] : null;
   }, [facing, playerPosition]);
 
   const farmReady = farmState?.plantedAt
@@ -340,13 +341,8 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
 
       if (event.key === " " || event.code === "Space") {
         event.preventDefault();
-        const delta = DIRECTION_VECTORS[facing];
-        const nextX = playerPosition.x + delta.dx;
-        const nextY = playerPosition.y + delta.dy;
-        const nextCell = getCellAt(nextX, nextY);
-
-        if (nextCell?.facility) {
-          handleFacilityInteraction(FACILITY_BY_TYPE[nextCell.facility].scene);
+        if (targetFacility) {
+          handleFacilityInteraction(targetFacility.scene);
         }
         return;
       }
@@ -374,7 +370,18 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [activeScene, facing, onOpenScene, playerPosition, farmReady, mineAttemptId, mineClicks, mineTarget]);
+  }, [
+    activeScene,
+    facing,
+    onOpenScene,
+    playerPosition,
+    farmReady,
+    mineAttemptId,
+    mineClicks,
+    mineTarget,
+    targetFacility,
+    handleFacilityInteraction,
+  ]);
 
   const farmIcon = farmState?.plantedAt
     ? farmReady
