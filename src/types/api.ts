@@ -108,6 +108,10 @@ export interface EvolveResponse {
   dexUpdated: boolean;
   /** 성체 완성으로 보상 알을 받을 수 있게 되었는가 */
   rewardAvailable: boolean;
+  /** 이 계정에 처음 등록되는 종인가 (일반 칸 기준) */
+  isNewSpecies: boolean;
+  /** 이 계정에 처음 등록되는 알비노인가 */
+  isNewAlbino: boolean;
 }
 
 // ---------------------------------------------------------------- 알

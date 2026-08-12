@@ -15,18 +15,32 @@ import type { DexCell, DexResponse } from '@/types/api';
 /** 트랜잭션 안에서도 쓸 수 있도록 클라이언트를 주입받는다 */
 type Db = Prisma.TransactionClient | typeof db;
 
+export interface RegisterSpeciesResult {
+  /** 이번 호출로 일반 칸이 처음 열렸는가 */
+  isNewNormal: boolean;
+  /** 이번 호출로 알비노 칸이 처음 열렸는가 */
+  isNewAlbino: boolean;
+}
+
 /**
  * 도감 등록.
  *
  * 진화·교환 양쪽에서 호출되며, 반드시 호출부의 트랜잭션 안에서 실행해야 한다.
  * 소유권 이전과 도감 등록이 갈라지면 개체는 넘어갔는데 도감은 비어 있는 상태가 생긴다.
+ *
+ * 호출 전 상태를 함께 돌려준다 — 축하 연출에서 "처음 보는 개체"인지 판단하려면
+ * upsert 이후 값만으로는 알 수 없다(둘 다 이미 true 라 새로 연 것과 구분이 안 된다).
  */
 export async function registerSpecies(
   tx: Db,
   userId: string,
   speciesId: number,
   isAlbino: boolean,
-): Promise<void> {
+): Promise<RegisterSpeciesResult> {
+  const before = await tx.dexEntry.findUnique({
+    where: { userId_speciesId: { userId, speciesId } },
+  });
+
   // 알비노는 상위 호환이다. 알비노를 얻으면 일반 칸도 함께 연다 — 같은 종을
   // 일반으로 한 번 더 키우게 만들 이유가 없고, 완성도 계산이 이미 알비노만으로도
   // 칸을 완성 처리하므로(8장) 표시만 어긋나 있었다.
@@ -40,6 +54,11 @@ export async function registerSpecies(
       hasAlbino: isAlbino,
     },
   });
+
+  return {
+    isNewNormal: !before?.hasNormal,
+    isNewAlbino: isAlbino && !before?.hasAlbino,
+  };
 }
 
 /**

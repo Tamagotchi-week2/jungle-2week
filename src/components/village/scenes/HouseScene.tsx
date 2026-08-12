@@ -116,6 +116,14 @@ export default function HouseScene() {
   const [celebrating, setCelebrating] = useState(false);
   const [evolving, setEvolving] = useState(false);
 
+  // 방금 완성한 성체가 이 계정에 처음 등록되는 폼인지. 서버가 도감 갱신 직전
+  // 상태와 비교해 판정한 값이라, "예전에 이미 봤던 종"을 새것으로 잘못 알리지
+  // 않는다 (클라이언트에만 저장된 기록은 이 계정의 과거 전체를 알 수 없다).
+  const [lastAdultNewFlags, setLastAdultNewFlags] = useState<{
+    isNewSpecies: boolean;
+    isNewAlbino: boolean;
+  } | null>(null);
+
   const pet = me?.activePet ?? null;
   const resources = me?.resources ?? { crop: 0, mineral: 0, seafood: 0 };
   const eggs = me?.eggs ?? { air: 0, land: 0, sea: 0, gold: 0 };
@@ -368,6 +376,10 @@ export default function HouseScene() {
           combo: result.pet.combo,
           speciesName: result.pet.speciesName,
         });
+        setLastAdultNewFlags({
+          isNewSpecies: result.isNewSpecies,
+          isNewAlbino: result.isNewAlbino,
+        });
         // 스스로 닫지 않는다. 성체 완성은 한 마리에 한 번뿐인 순간이라,
         // 다른 곳을 보고 있는 사이에 지나가 버리면 다시 볼 방법이 없다.
         // 확인 버튼을 눌러야만 닫힌다.
@@ -389,6 +401,10 @@ export default function HouseScene() {
 
   /** 개체가 없으면 그릴 것도 없다. petSprite 는 단계 정보가 모자라면 던진다 */
   const spritePath = displayPet === null ? "" : petSprite(displayPet);
+
+  /** 축하 모달의 NEW 배지 — 방금 진화가 이 계정에 처음 등록한 폼인가 (서버 판정) */
+  const isLastAdultNewAlbino = lastAdultNewFlags?.isNewAlbino ?? false;
+  const isLastAdultNew = isLastAdultNewAlbino || (lastAdultNewFlags?.isNewSpecies ?? false);
 
   const canEvolve =
     pet !== null &&
@@ -667,6 +683,9 @@ export default function HouseScene() {
           style={{ left: touchPoint.x, top: touchPoint.y, imageRendering: "pixelated" }}
         />
       ) : null}
+      {/* 여기서 확인해도 도감의 NEW 는 지우지 않는다. 도감을 열었을 때 어떤
+          칸이 새로 찼는지 한 번 더 보이는 편이 낫다 — 배지는 도감에서 그 칸을
+          직접 눌러야 사라진다. */}
       <Modal
         open={celebrating && lastAdultPet !== null}
         onClose={() => setCelebrating(false)}
@@ -675,7 +694,18 @@ export default function HouseScene() {
       >
         <div className="evolution-celebrate">
           <p className="evolution-celebrate-kicker">최종 성장 완료</p>
-          <h2 className="evolution-celebrate-title">{lastAdultPet?.speciesName ?? STAGE_NAME[FINAL_GROWTH_STAGE]}</h2>
+          <h2 className="evolution-celebrate-title">
+            {isLastAdultNew ? (
+              <span
+                className={`dex-book-new-mark evolution-celebrate-new-mark ${
+                  isLastAdultNewAlbino ? "dex-book-new-mark-gold" : ""
+                }`}
+              >
+                NEW
+              </span>
+            ) : null}
+            {lastAdultPet?.speciesName ?? STAGE_NAME[FINAL_GROWTH_STAGE]}
+          </h2>
           <div className="evolution-celebrate-portrait">
             {lastAdultPet ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -687,7 +717,9 @@ export default function HouseScene() {
             ) : null}
           </div>
           <p className="evolution-celebrate-copy">
-            개체가 최종 성장 단계에 도달했습니다. 도감에서도 확인할 수 있습니다.
+            {isLastAdultNew
+              ? "도감에 없던 개체입니다! 도감에 새로 기록되었습니다."
+              : "개체가 최종 성장 단계에 도달했습니다. 도감에서도 확인할 수 있습니다."}
           </p>
           <button type="button" className="evolution-celebrate-button" onClick={() => setCelebrating(false)}>
             확인
