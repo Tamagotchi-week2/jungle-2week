@@ -100,10 +100,19 @@ export async function harvestFarm(userId: string): Promise<HarvestResponse> {
       );
     }
 
-    await tx.farmPlot.update({
-      where: { id: plot.id },
+    // 조건부 업데이트로 수확을 딱 한 번만 통과시킨다. 연타로 동시에 들어온 두
+    // 요청은 둘 다 위 SELECT 에서 plantedAt 이 있는 걸 보고 통과하지만,
+    // UPDATE 는 행 잠금 때문에 순서가 생긴다 — 먼저 커밋된 쪽이 plantedAt 을
+    // null 로 지우고 나면, 뒤이어 잠금이 풀린 두 번째 UPDATE 는 자신이 읽었던
+    // plantedAt 값과 지금 값(null)이 달라 WHERE 에 걸려 0행을 갱신한다.
+    // update() 만 썼다면 이 확인이 없어 자원이 두 번 지급됐다.
+    const { count } = await tx.farmPlot.updateMany({
+      where: { id: plot.id, plantedAt: plot.plantedAt },
       data: { plantedAt: null },
     });
+    if (count === 0) {
+      throw new GameRuleError('이미 수확되었다');
+    }
 
     return {
       gained: BALANCE.FARM_YIELD,

@@ -217,6 +217,8 @@ export async function evolvePet(
         pet: toPetView(updated),
         dexUpdated: false,
         rewardAvailable: false,
+        isNewSpecies: false,
+        isNewAlbino: false,
       };
     }
 
@@ -241,7 +243,7 @@ export async function evolvePet(
       include: { species: true },
     });
 
-    await registerSpecies(tx, userId, species.id, pet.isAlbino);
+    const { isNewNormal, isNewAlbino } = await registerSpecies(tx, userId, species.id, pet.isAlbino);
 
     // 교환으로 받은 성체는 보상 알을 주지 않는다. 여기는 직접 키운 경우뿐이다 (6장).
     await tx.user.update({
@@ -253,6 +255,11 @@ export async function evolvePet(
       pet: toPetView(updated),
       dexUpdated: true,
       rewardAvailable: true,
+      // 축하 연출의 NEW 배지 판단 근거. 알비노로 처음 열렸으면 일반 칸도 항상
+      // 함께 열리므로(registerSpecies) isNewNormal 도 true 지만, 이 경우
+      // "새로 발견"의 의미는 알비노 쪽이 더 강하다 — 표시는 클라이언트가 고른다.
+      isNewSpecies: isNewNormal,
+      isNewAlbino,
     };
   });
 }

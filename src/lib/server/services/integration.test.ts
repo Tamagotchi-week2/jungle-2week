@@ -355,6 +355,38 @@ suite('서비스 계층 통합', () => {
       expect(harvest.gained).toBe(BALANCE.FARM_YIELD);
     });
 
+    it('다 자란 작물을 동시에 연타해도 수확은 한 번만 된다', async () => {
+      const userId = await newUser();
+      await plantFarm(userId);
+
+      const plot = await db.farmPlot.findFirstOrThrow({ where: { userId } });
+      await db.farmPlot.update({
+        where: { id: plot.id },
+        data: {
+          plantedAt: new Date(
+            Date.now() - (BALANCE.FARM_GROW_SECONDS + 1) * 1000,
+          ),
+        },
+      });
+
+      // 연타로 거의 동시에 도착하는 두 요청을 흉내낸다. 서버가 조건부 없는
+      // update() 만 썼다면 둘 다 통과해 작물 2배를 지급했다.
+      const results = await Promise.allSettled([
+        harvestFarm(userId),
+        harvestFarm(userId),
+      ]);
+
+      const fulfilled = results.filter((r) => r.status === 'fulfilled');
+      const rejected = results.filter((r) => r.status === 'rejected');
+      expect(fulfilled).toHaveLength(1);
+      expect(rejected).toHaveLength(1);
+
+      const resources = await db.inventory.findFirst({
+        where: { userId, resourceType: 'crop' },
+      });
+      expect(resources?.count).toBe(BALANCE.FARM_YIELD);
+    });
+
     it('광산은 사람이 낼 수 없는 속도를 거절하고 세션을 재사용할 수 없다', async () => {
       const userId = await newUser();
 

@@ -72,6 +72,9 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
    * 갱신되지 않아, 빠르게 연타하면 같은 순간의 옛 값을 보고 세션을 여러 번 만든다.
    * 마지막 세션이 이기면서 그 전에 센 연타가 통째로 버려진다.
    */
+  // 수확 요청이 떠 있는 동안 켜둔다. farmLoading 과 같은 이유로(위 주석) state
+  // 만으로는 한 프레임에 몰린 연타를 못 막아 수확 요청이 여러 번 나간다.
+  const farmHarvestingRef = useRef(false);
   const [playerPosition, setPlayerPosition] = useState(MAP_START);
   const [facing, setFacing] = useState<Facing>("down");
   const [walkFrame, setWalkFrame] = useState<0 | 1>(0);
@@ -148,7 +151,7 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
   }
 
   async function harvestFarm() {
-    if (farmLoading) {
+    if (farmHarvestingRef.current) {
       return;
     }
     if (!farmReady) {
@@ -156,6 +159,7 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
       return;
     }
 
+    farmHarvestingRef.current = true;
     setFarmLoading(true);
     setFarmFeedback("");
 
@@ -172,6 +176,7 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
       // 자원이 늘었으므로 상단 HUD 도 갱신한다
       await refresh();
     }
+    farmHarvestingRef.current = false;
     setFarmLoading(false);
   }
 
@@ -408,12 +413,10 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
             const facilityImage = facility.scene === "farm" ? farmIcon : facility.image;
 
             return (
-              <button
+              <div
                 key={`facility-${x}-${y}`}
-                type="button"
                 style={style}
-                className="absolute flex items-center justify-center"
-                onClick={() => handleFacilityInteraction(facility.scene)}
+                className="pointer-events-none absolute flex items-center justify-center"
               >
                 <img
                   src={facilityImage}
@@ -426,7 +429,7 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
                   }}
                   draggable={false}
                 />
-              </button>
+              </div>
             );
           }),
         )}

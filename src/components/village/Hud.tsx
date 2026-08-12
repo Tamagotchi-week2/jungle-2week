@@ -50,6 +50,7 @@ function Counter({
         alt={label}
         className="h-5 w-5 object-contain"
         style={{ imageRendering: "pixelated" }}
+        draggable={false}
       />
       <span>{count}</span>
     </span>

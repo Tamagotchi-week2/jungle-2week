@@ -278,10 +278,10 @@ export default function ShoreScene() {
               <div className="shore-sprite-space mx-auto flex h-[280px] w-[280px] items-center justify-center">
                 {state === "bite" ? (
                   <div className="animate-bounce">
-                    <img src="/sprites/shore/bobber.png" alt="Bobber" className="h-16 w-16 object-contain image-rendering-pixelated" />
+                    <img src="/sprites/shore/bobber.png" alt="Bobber" className="h-16 w-16 object-contain image-rendering-pixelated" draggable={false} />
                   </div>
                 ) : (
-                  <img src="/sprites/shore/rod.png" alt="Fishing Rod" className="h-48 w-40 object-contain image-rendering-pixelated" />
+                  <img src="/sprites/shore/rod.png" alt="Fishing Rod" className="h-48 w-40 object-contain image-rendering-pixelated" draggable={false} />
                 )}
               </div>
             </div>

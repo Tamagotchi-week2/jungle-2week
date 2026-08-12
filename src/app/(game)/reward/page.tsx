@@ -187,6 +187,7 @@ function Egg({
           alt=""
           className="h-full w-full object-contain"
           onError={() => setHasSprite(false)}
+          draggable={false}
         />
       )}
     </div>

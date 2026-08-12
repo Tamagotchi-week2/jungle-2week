@@ -27,6 +27,7 @@ function PetSlot({ label, pet, facing }: { label: string; pet?: TradePetView | n
             alt={pet.speciesName}
             className="trade-pet-sprite"
             style={{ imageRendering: "pixelated" }}
+            draggable={false}
           />
         ) : (
           <span className="trade-pet-waiting">펫 대기 중</span>

@@ -15,12 +15,16 @@ import { useEffect, useState } from "react";
 
 import { adultSprite } from "@/lib/sprites";
 import type { DexCell, DexResponse } from "@/types/api";
+import { useMe } from "../MeContext";
+import { dexFormKey, markDexFormsSeen, seedSeenDexFormsOnce } from "@/lib/client/dexSeen";
 
 export default function DexScene() {
+  const { me } = useMe();
   const [dex, setDex] = useState<DexResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [showAlbino, setShowAlbino] = useState(false);
+  const [seen, setSeen] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     let mounted = true;
@@ -39,9 +43,37 @@ export default function DexScene() {
     };
   }, []);
 
+  // 닉네임과 도감 데이터가 모두 오면(최초 1회) 확인한 폼 목록을 저장소에서
+  // 읽어온다. 이 계정에 baseline 기록이 아예 없으면(이 기능이 막 배포된
+  // 직후) 지금 이미 보유한 폼을 전부 확인함으로 깔아, 예전부터 갖고 있던
+  // 칸들이 한꺼번에 NEW 로 뜨는 걸 막는다.
+  useEffect(() => {
+    if (!me || !dex) return;
+    const owned: string[] = [];
+    for (const cell of dex.cells) {
+      if (cell.hasNormal) owned.push(dexFormKey(cell.eggType, cell.combo, "normal"));
+      if (cell.hasAlbino) owned.push(dexFormKey(cell.eggType, cell.combo, "albino"));
+    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSeen(seedSeenDexFormsOnce(me.nickname, owned));
+    // 닉네임 문자열 + dex 로만 재실행한다. me 객체 전체를 넣으면 다른 화면의
+    // refresh() 로 me 참조가 바뀔 때마다(자원 변동 등) 불필요하게 재실행된다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [me?.nickname, dex]);
+
   const cells: DexCell[] = dex?.cells ?? [];
   const selected = selectedIndex === null ? null : (cells[selectedIndex] ?? null);
   const selectedHasAlbino = selected?.hasAlbino ?? false;
+
+  /** 칸을 열람하면 지금 보유한 폼(들)을 전부 확인 처리한다 — 나중에 다시 봐도 NEW 가 뜨지 않는다 */
+  const markSeen = (cell: DexCell) => {
+    if (!me) return;
+    const keys: string[] = [];
+    if (cell.hasNormal) keys.push(dexFormKey(cell.eggType, cell.combo, "normal"));
+    if (cell.hasAlbino) keys.push(dexFormKey(cell.eggType, cell.combo, "albino"));
+    if (keys.length === 0) return;
+    setSeen((current) => markDexFormsSeen(me.nickname, keys, current));
+  };
 
   return (
     <div className="dex-book-bg">
@@ -60,6 +92,9 @@ export default function DexScene() {
             <div className="dex-book-grid">
               {cells.map((cell, index) => {
                 const acquired = cell.hasNormal || cell.hasAlbino;
+                const isNewAlbino = cell.hasAlbino && !seen.has(dexFormKey(cell.eggType, cell.combo, "albino"));
+                const isNewNormal = cell.hasNormal && !seen.has(dexFormKey(cell.eggType, cell.combo, "normal"));
+                const isNew = isNewNormal || isNewAlbino;
                 const cardClasses = [
                   "dex-book-slot",
                   acquired ? "dex-book-slot-acquired" : "dex-book-slot-locked",
@@ -77,23 +112,32 @@ export default function DexScene() {
                     onClick={() => {
                       setSelectedIndex(index);
                       setShowAlbino(false);
+                      markSeen(cell);
                     }}
                   >
                     <span className="dex-book-slot-number">
                       {String(index + 1).padStart(2, "0")}
                     </span>
                     <div className="dex-book-slot-image dex-dotted-paper">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       {acquired ? (
+                        // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={adultSprite(cell.eggType, cell.combo, false)}
                           alt={cell.name}
                           style={{ imageRendering: "pixelated" }}
+                          draggable={false}
                         />
                       ) : null}
                       {!acquired ? <div className="dex-book-slot-mask">???</div> : null}
                     </div>
                     <span className="dex-book-slot-name">{cell.name}</span>
+                    {isNew ? (
+                      <span
+                        className={`dex-book-new-mark ${isNewAlbino ? "dex-book-new-mark-gold" : ""}`}
+                      >
+                        NEW
+                      </span>
+                    ) : null}
                   </button>
                 );
               })}
@@ -123,6 +167,7 @@ export default function DexScene() {
                           src={adultSprite(selected.eggType, selected.combo, false)}
                           alt={selected.name}
                           style={{ imageRendering: "pixelated" }}
+                          draggable={false}
                         />
                       ) : null}
                       {!selected?.hasNormal ? (
@@ -136,6 +181,7 @@ export default function DexScene() {
                           src={adultSprite(selected.eggType, selected.combo, true)}
                           alt={`${selected.name} 알비노`}
                           style={{ imageRendering: "pixelated" }}
+                          draggable={false}
                         />
                       ) : null}
                       {!selectedHasAlbino ? (
