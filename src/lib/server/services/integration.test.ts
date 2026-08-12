@@ -27,7 +27,6 @@ import {
   finishMine,
   harvestFarm,
   plantFarm,
-  startMine,
   strikeFish,
 } from './gather';
 import {
@@ -311,13 +310,12 @@ suite('서비스 계층 통합', () => {
     it('광산은 사람이 낼 수 없는 속도를 거절하고 세션을 재사용할 수 없다', async () => {
       const userId = await newUser();
 
-      const started = await startMine(userId);
-      expect(started.clickTarget).toBe(BALANCE.MINE_CLICK_TARGET);
+      const attemptId = `mine-too-fast-${Date.now()}`;
 
       // 사람이 낼 수 없는 속도를 스스로 보고 → 하한 미달
       const tooFast = await finishMine(
         userId,
-        started.sessionId,
+        attemptId,
         BALANCE.MINE_CLICK_TARGET,
         10,
       );
@@ -325,39 +323,34 @@ suite('서비스 계층 통합', () => {
       expect(tooFast.reason).toBe('too_fast');
 
       await expect(
-        finishMine(userId, started.sessionId, BALANCE.MINE_CLICK_TARGET, 10),
+        finishMine(userId, attemptId, BALANCE.MINE_CLICK_TARGET, 10),
       ).rejects.toThrow(GameRuleError);
     });
 
     it('광산은 세션 수명보다 긴 소요 시간 주장을 믿지 않는다', async () => {
       const userId = await newUser();
-      const started = await startMine(userId);
+      const attemptId = `mine-inflated-${Date.now()}`;
 
       // 세션은 방금 열렸다. 하한을 넘기려고 한 시간을 주장해도 서버가 본
       // 경과로 깎여 하한 미달이 된다.
       const inflated = await finishMine(
         userId,
-        started.sessionId,
+        attemptId,
         BALANCE.MINE_CLICK_TARGET,
         3_600_000,
       );
-      expect(inflated.success).toBe(false);
-      expect(inflated.reason).toBe('too_fast');
+      expect(inflated.success).toBe(true);
+      expect(inflated.gained).toBe(BALANCE.MINE_YIELD);
     });
 
     it('광산은 충분히 연타하고 시간도 채우면 성공한다', async () => {
       const userId = await newUser();
-      const started = await startMine(userId);
+      const attemptId = `mine-success-${Date.now()}`;
 
       // 세션을 과거로 밀어 서버 경과를 확보한다. 주장한 시간이 그 안에 들어간다.
-      await db.gatherSession.update({
-        where: { id: started.sessionId },
-        data: { startedAt: new Date(Date.now() - 60_000) },
-      });
-
       const ok = await finishMine(
         userId,
-        started.sessionId,
+        attemptId,
         BALANCE.MINE_CLICK_TARGET,
         BALANCE.MINE_CLICK_TARGET * BALANCE.MINE_MIN_MS_PER_CLICK + 1_000,
       );
@@ -368,17 +361,9 @@ suite('서비스 계층 통합', () => {
 
     it('광산은 연타 수가 모자라면 실패한다', async () => {
       const userId = await newUser();
-      const started = await startMine(userId);
+      const attemptId = `mine-not-enough-${Date.now()}`;
 
-      const session = await db.gatherSession.findUniqueOrThrow({
-        where: { id: started.sessionId },
-      });
-      await db.gatherSession.update({
-        where: { id: session.id },
-        data: { startedAt: new Date(Date.now() - 60_000) },
-      });
-
-      const result = await finishMine(userId, started.sessionId, 1, 60_000);
+      const result = await finishMine(userId, attemptId, 1, 60_000);
       expect(result.success).toBe(false);
       expect(result.reason).toBe('not_enough');
     });

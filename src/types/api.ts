@@ -153,11 +153,6 @@ export interface HarvestResponse {
 }
 
 /** 광산 시작 — 서버가 세션을 연다 */
-export interface MineStartResponse {
-  sessionId: string;
-  clickTarget: number;
-}
-
 /**
  * 광산 완료.
  *
@@ -166,7 +161,7 @@ export interface MineStartResponse {
  * mine/start 왕복이 포함되어 자동 연타에 그만큼 관대해지기 때문이다.
  */
 export interface MineFinishRequest {
-  sessionId: string;
+  attemptId: string;
   clicks: number;
   /** 연타 준비부터 목표 도달까지 걸린 시간(ms). 클라이언트 측정값 */
   elapsedMs: number;

@@ -6,7 +6,6 @@ import type {
   FarmStateResponse,
   HarvestResponse,
   MineFinishResponse,
-  MineStartResponse,
 } from "@/types/api";
 import {
   FACILITY_BY_TYPE,
@@ -56,7 +55,7 @@ function getFarmElapsedSeconds(plantedAt: string) {
 }
 
 export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps) {
-  const { refresh } = useMe();
+  const { refresh, applyResources } = useMe();
   // 연타 수는 ref 로 센다. 키 입력이 한 프레임에 몰리면 state 는 갱신 전 값을 보게 되어
   // 목표치에 영원히 도달하지 못하거나 중복 완료가 발생한다.
   const mineClickRef = useRef(0);
@@ -73,7 +72,6 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
    * 갱신되지 않아, 빠르게 연타하면 같은 순간의 옛 값을 보고 세션을 여러 번 만든다.
    * 마지막 세션이 이기면서 그 전에 센 연타가 통째로 버려진다.
    */
-  const mineStartingRef = useRef(false);
   const [playerPosition, setPlayerPosition] = useState(MAP_START);
   const [facing, setFacing] = useState<Facing>("down");
   const [walkFrame, setWalkFrame] = useState<0 | 1>(0);
@@ -82,7 +80,7 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
   const [farmFeedback, setFarmFeedback] = useState("Loading farm state...");
   const [farmTick, setFarmTick] = useState(0);
 
-  const [mineSessionId, setMineSessionId] = useState<string | null>(null);
+  const [mineAttemptId, setMineAttemptId] = useState<string | null>(null);
   const [mineClicks, setMineClicks] = useState(0);
   const [mineTarget, setMineTarget] = useState(MINE_CLICK_TARGET);
   const [mineFeedback, setMineFeedback] = useState("");
@@ -177,38 +175,18 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
     setFarmLoading(false);
   }
 
-  async function startMine() {
-    if (mineLoading) {
-      return;
-    }
-    if (mineStartingRef.current) {
-      return;
-    }
-    mineStartingRef.current = true;
+  function startMineLocally(): string {
+    const attemptId = crypto.randomUUID();
     mineClickRef.current = 0;
     mineCompletingRef.current = false;
-    mineStartedAtRef.current = null;
-    setMineLoading(true);
-    setMineFeedback("");
-
-    const response = await fetch("/api/gather/mine/start", {
-      method: "POST",
-    });
-    const payload = await response.json();
-    setMineLoading(false);
-    mineStartingRef.current = false;
-
-    if (!response.ok) {
-      setMineOk(false);
-      setMineFeedback(payload?.error ?? "채굴을 시작하지 못했습니다.");
-      return;
-    }
-
-    const data = payload as MineStartResponse;
-    setMineSessionId(data.sessionId);
-    setMineTarget(data.clickTarget);
+    mineStartedAtRef.current = performance.now();
+    setMineAttemptId(attemptId);
     setMineClicks(0);
+    setMineTarget(MINE_CLICK_TARGET);
+    setMineOk(true);
     setMineFeedback("");
+
+    return attemptId;
   }
 
   /** 판정 결과를 화면 문구로 옮긴다. 로컬 판정과 서버 판정이 같은 표현을 쓴다 */
@@ -229,8 +207,8 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
     );
   }
 
-  async function completeMine(clicks: number, elapsedMs: number) {
-    if (!mineSessionId || mineLoading) {
+  async function completeMine(attemptId: string, clicks: number, elapsedMs: number) {
+    if (mineLoading) {
       return;
     }
 
@@ -244,11 +222,11 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
     const response = await fetch("/api/gather/mine/finish", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ sessionId: mineSessionId, clicks, elapsedMs }),
+      body: JSON.stringify({ attemptId, clicks, elapsedMs }),
     });
     const payload = (await response.json()) as MineFinishResponse;
     setMineLoading(false);
-    setMineSessionId(null);
+    setMineAttemptId(null);
     setMineClicks(0);
     setMineTarget(MINE_CLICK_TARGET);
     mineClickRef.current = 0;
@@ -268,7 +246,7 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
 
     if (payload.success) {
       setMineFeedback(`광물 ${payload.gained}개 획득!`);
-      await refresh();
+      applyResources(payload.resources);
     }
   }
 
@@ -285,14 +263,11 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
     }
 
     if (scene === "mine") {
-      if (!mineSessionId) {
-        startMine();
-        return;
-      }
-
       if (mineCompletingRef.current) {
         return;
       }
+
+      const attemptId = mineAttemptId ?? startMineLocally();
 
       // 첫 연타에서 시계를 켠다. 세션 생성 응답을 기다린 시간은 빼야 한다.
       if (mineStartedAtRef.current === null) {
@@ -305,8 +280,9 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
       if (mineClickRef.current >= mineTarget) {
         mineCompletingRef.current = true;
         completeMine(
+          attemptId,
           mineClickRef.current,
-          Math.round(performance.now() - mineStartedAtRef.current),
+          Math.round(performance.now() - (mineStartedAtRef.current ?? performance.now())),
         );
       }
       return;
@@ -392,7 +368,7 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [activeScene, facing, onOpenScene, playerPosition, farmReady, mineSessionId, mineClicks, mineTarget]);
+  }, [activeScene, facing, onOpenScene, playerPosition, farmReady, mineAttemptId, mineClicks, mineTarget]);
 
   const farmIcon = farmState?.plantedAt
     ? farmReady
@@ -504,9 +480,9 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
           <div className="mt-3 space-y-2">
             <p className="text-sm">앞에 광산이 있습니다. <span className="text-amber-200">스페이스바</span>를 누르세요.</p>
             <p className="text-base font-semibold text-slate-100">
-              {mineSessionId ? `채굴 ${mineClicks} / ${mineTarget}` : "대기 중"}
+              {mineAttemptId ? `채굴 ${mineClicks} / ${mineTarget}` : "대기 중"}
             </p>
-            <p className="text-sm">{mineSessionId ? "목표까지 스페이스바를 계속 누르세요." : "스페이스바로 채굴을 시작합니다."}</p>
+            <p className="text-sm">{mineAttemptId ? "목표까지 스페이스바를 계속 누르세요." : "스페이스바로 채굴을 시작합니다."}</p>
             {mineFeedback ? (
               <p className={`text-sm ${mineOk ? "text-emerald-200" : "text-red-300"}`}>
                 {mineFeedback}

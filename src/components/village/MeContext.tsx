@@ -24,6 +24,8 @@ interface MeContextValue {
   me: MeResponse | null;
   /** 서버 현황을 다시 가져온다. 자원·알이 변한 뒤 호출 */
   refresh: () => Promise<void>;
+  /** 채집 완료 응답의 자원 수치를 서버 재조회 없이 HUD에 반영한다. */
+  applyResources: (resources: MeResponse['resources']) => void;
   error: string | null;
 }
 
@@ -48,6 +50,10 @@ export function MeProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const applyResources = useCallback((resources: MeResponse['resources']) => {
+    setMe((current) => (current ? { ...current, resources } : current));
+  }, []);
+
   useEffect(() => {
     // 마운트 시 1회 로드. setState 는 await 이후에만 일어나 실제 연쇄 렌더는 없다.
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -55,7 +61,7 @@ export function MeProvider({ children }: { children: React.ReactNode }) {
   }, [refresh]);
 
   return (
-    <MeContext.Provider value={{ me, refresh, error }}>
+    <MeContext.Provider value={{ me, refresh, applyResources, error }}>
       {children}
     </MeContext.Provider>
   );

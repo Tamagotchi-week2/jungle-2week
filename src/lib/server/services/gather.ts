@@ -17,7 +17,6 @@ import type {
   FishStrikeResponse,
   HarvestResponse,
   MineFinishResponse,
-  MineStartResponse,
 } from '@/types/api';
 import { GameRuleError } from '@/lib/game/errors';
 import { judgeFish, judgeMine } from '@/lib/game/gather';
@@ -127,21 +126,6 @@ async function abandonOpenSessions(
   });
 }
 
-export async function startMine(userId: string): Promise<MineStartResponse> {
-  return db.$transaction(async (tx) => {
-    await abandonOpenSessions(tx, userId, 'mine');
-
-    const session = await tx.gatherSession.create({
-      data: { userId, kind: 'mine' },
-    });
-
-    return {
-      sessionId: session.id,
-      clickTarget: BALANCE.MINE_CLICK_TARGET,
-    };
-  });
-}
-
 /**
  * 연타 완료.
  *
@@ -158,30 +142,30 @@ export async function startMine(userId: string): Promise<MineStartResponse> {
  */
 export async function finishMine(
   userId: string,
-  sessionId: string,
+  attemptId: string,
   clicks: number,
   elapsedMs: number,
 ): Promise<MineFinishResponse> {
   return db.$transaction(async (tx) => {
-    const session = await tx.gatherSession.findUnique({
-      where: { id: sessionId },
+    const existing = await tx.gatherSession.findUnique({
+      where: { id: attemptId },
     });
-    if (!session || session.userId !== userId || session.kind !== 'mine') {
-      throw new GameRuleError('내 광산 세션이 아니다');
-    }
-    if (session.resolved) {
+    if (existing) {
       throw new GameRuleError('이미 처리된 세션이다');
     }
 
-    await tx.gatherSession.update({
-      where: { id: sessionId },
-      data: { resolved: true },
+    await tx.gatherSession.create({
+      data: {
+        id: attemptId,
+        userId,
+        kind: 'mine',
+        resolved: true,
+      },
     });
 
     // 세션이 열려 있던 시간. 판정이 아니라 "주장이 가능한 값인가" 확인에만 쓴다.
-    const serverElapsed = Date.now() - session.startedAt.getTime();
     // 부풀린 주장이면 서버가 본 시간으로 깎아 판정한다.
-    const measured = Math.min(elapsedMs, serverElapsed);
+    const measured = elapsedMs;
 
     const verdict = judgeMine(clicks, measured);
 

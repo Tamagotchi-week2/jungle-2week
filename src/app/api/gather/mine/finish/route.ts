@@ -7,7 +7,7 @@ export const POST = withUser(async (userId, req) => {
   const body = await readJson<MineFinishRequest>(req);
   return finishMine(
     userId,
-    expectString(body.sessionId, 'sessionId'),
+    expectString(body.attemptId, 'attemptId'),
     expectInt(body.clicks, 'clicks'),
     expectInt(body.elapsedMs, 'elapsedMs'),
   );
