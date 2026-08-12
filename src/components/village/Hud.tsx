@@ -118,19 +118,6 @@ export default function Hud({
         </div>
 
         <div className="flex items-center gap-2">
-          {/* 게임 종료 = 로그아웃. 세션이 끊기면 미들웨어가 /login 으로 돌려보낸다.
-              나가는 동작은 되돌리기 어려우니 한 번 확인을 받는다. window.confirm
-              대신 화면 안 모달로 확인받고, 확정되면 이 폼을 프로그램적으로 제출한다. */}
-          <form action={logout} ref={logoutFormRef}>
-            <button
-              type="button"
-              onClick={() => setConfirmingLogout(true)}
-              className="village-hud-button rounded-2xl px-3 py-2 text-sm transition"
-              title="로그아웃하고 게임을 종료합니다"
-            >
-              종료
-            </button>
-          </form>
           {unclaimedRewards > 0 && !isFinalStage ? (
             // 육성 중(유아기~성장 중)일 때만 여기 노출한다. 성체 완료 상태(isFinalStage)가
             // 되면 같은 보상 선택이 집(HouseScene) 하단으로 옮겨가므로 여기서는 숨긴다.
@@ -157,10 +144,22 @@ export default function Hud({
           >
             💱 교환
           </button>
+          {/* 종료는 가장 오른쪽에 둔다. 되돌리기 어려운 동작이므로 확인 후 제출한다. */}
+          <form action={logout} ref={logoutFormRef}>
+            <button
+              type="button"
+              onClick={() => setConfirmingLogout(true)}
+              className="village-hud-button rounded-2xl px-3 py-2 text-sm transition"
+              title="로그아웃하고 게임을 종료합니다"
+            >
+              종료
+            </button>
+          </form>
         </div>
       </div>
       <Modal open={confirmingLogout} onClose={() => setConfirmingLogout(false)}>
-        <div className="confirm-dialog">
+        <div className="confirm-dialog confirm-dialog-forest">
+          <p className="confirm-dialog-kicker">마을을 떠나시나요?</p>
           <p className="confirm-dialog-message">게임을 종료하고 로그아웃할까요?</p>
           <div className="confirm-dialog-actions">
             <button

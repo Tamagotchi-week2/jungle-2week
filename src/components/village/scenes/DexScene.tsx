@@ -119,20 +119,17 @@ export default function DexScene() {
                       {String(index + 1).padStart(2, "0")}
                     </span>
                     <div className="dex-book-slot-image dex-dotted-paper">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={adultSprite(cell.eggType, cell.combo, false)}
-                        alt={cell.name}
-                        style={{ imageRendering: "pixelated" }}
-                      />
+                      {acquired ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={adultSprite(cell.eggType, cell.combo, false)}
+                          alt={cell.name}
+                          style={{ imageRendering: "pixelated" }}
+                        />
+                      ) : null}
                       {!acquired ? <div className="dex-book-slot-mask">???</div> : null}
                     </div>
                     <span className="dex-book-slot-name">{cell.name}</span>
-                    {cell.hasAlbino ? (
-                      <span className="dex-book-albino-mark" title="Albino acquired">
-                        ✦
-                      </span>
-                    ) : null}
                     {isNew ? (
                       <span
                         className={`dex-book-new-mark ${isNewAlbino ? "dex-book-new-mark-gold" : ""}`}
@@ -163,7 +160,7 @@ export default function DexScene() {
                       style={{ transform: showAlbino ? "rotateY(180deg)" : "rotateY(0deg)" }}
                     >
                     <div className="dex-book-portrait-face">
-                      {selected ? (
+                      {selected?.hasNormal ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={adultSprite(selected.eggType, selected.combo, false)}
@@ -172,11 +169,11 @@ export default function DexScene() {
                         />
                       ) : null}
                       {!selected?.hasNormal ? (
-                        <div className="dex-book-portrait-mask">미발견</div>
+                        <div className="dex-book-portrait-mask">???</div>
                       ) : null}
                     </div>
                     <div className="dex-book-portrait-face dex-book-portrait-back">
-                      {selected ? (
+                      {selectedHasAlbino && selected ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={adultSprite(selected.eggType, selected.combo, true)}
@@ -185,7 +182,7 @@ export default function DexScene() {
                         />
                       ) : null}
                       {!selectedHasAlbino ? (
-                        <div className="dex-book-portrait-mask">알비노 미발견</div>
+                        <div className="dex-book-portrait-mask">???</div>
                       ) : null}
                     </div>
                     </div>
