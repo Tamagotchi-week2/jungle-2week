@@ -130,39 +130,50 @@ export default function TradeSceneContainer({ onClose }: { onClose?: () => void 
   );
 
   /**
-   * 하던 교환에 다시 붙는다.
+   * 잠긴 개체를 눌러 그 개체에 걸린 교환을 다시 띄운다.
    *
-   * 진행 상태가 이 컴포넌트의 state 에만 있어서, 새로고침하면 화면은 잊어버리는데
-   * 서버는 기억하고 있었다. 그 사이 개체는 잠긴 채 취소할 방법도 없었다.
+   * 교환은 개체마다 걸 수 있으므로 "진행 중인 교환" 이 하나로 정해지지 않는다.
+   * 화면을 열 때 아무거나 하나를 골라 복원하면, 그걸 취소했을 때 숨어 있던 다른
+   * 건이 튀어나와 "취소했는데 왜 아직 진행 중이지" 로 보인다. 그래서 자동으로
+   * 복원하지 않고, 어느 개체의 교환인지 유저가 짚었을 때만 되살린다.
    *
    * 단계 판정에 주의한다. 같은 joined 라도 제안자는 확정할 수 있고(joined)
-   * 참여자는 기다릴 뿐이다(sent). 이걸 뒤집으면 버튼이 죽거나, 권한도 없이
-   * 확정 버튼이 열린다.
+   * 참여자는 기다릴 뿐이다(sent). 뒤집으면 버튼이 죽거나 권한 없이 열린다.
    */
-  const restoreActiveTrade = useCallback(async () => {
-    const res = await fetch("/api/trade/active");
-    if (!res.ok) return;
+  const showLockedTrade = useCallback(
+    async (petId: string) => {
+      const res = await fetch(
+        `/api/trade/by-pet?petId=${encodeURIComponent(petId)}`,
+      );
+      if (!res.ok) return;
 
-    const { trade } = (await res.json()) as { trade: TradeStatusView | null };
-    if (!trade) return;
+      const { trade } = (await res.json()) as { trade: TradeStatusView | null };
+      if (!trade) {
+        // 방금 만료돼 회수됐을 수 있다. 목록을 새로 읽어 잠금 표시를 지운다.
+        setNotice("해당 교환은 이미 끝났습니다.");
+        await loadPets();
+        return;
+      }
 
-    setStatus(trade);
-    setCode(trade.code);
-    if (trade.status === "proposed") {
-      setPhase("waiting");
-      startPolling(trade.code, "waiting");
-    } else {
-      setPhase(trade.iAmProposer ? "joined" : "sent");
-      if (!trade.iAmProposer) startPolling(trade.code, "sent");
-    }
-    setNotice("진행 중이던 교환을 이어서 표시합니다.");
-  }, [startPolling]);
+      setStatus(trade);
+      setCode(trade.code);
+      if (trade.status === "proposed") {
+        setPhase("waiting");
+        startPolling(trade.code, "waiting");
+      } else {
+        setPhase(trade.iAmProposer ? "joined" : "sent");
+        if (!trade.iAmProposer) startPolling(trade.code, "sent");
+      }
+      setNotice(null);
+    },
+    [loadPets, startPolling],
+  );
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    void loadPets().then(restoreActiveTrade);
+    void loadPets();
     return stopPolling;
-  }, [loadPets, restoreActiveTrade, stopPolling]);
+  }, [loadPets, stopPolling]);
 
   async function run<T>(fn: () => Promise<T>): Promise<T | null> {
     setBusy(true);
@@ -333,12 +344,15 @@ export default function TradeSceneContainer({ onClose }: { onClose?: () => void 
                 <button
                   key={pet.id}
                   type="button"
-                  // 잠긴 개체는 보이되 고를 수는 없다. 골라도 서버가 거절한다.
-                  disabled={phase !== "idle" || pet.isLocked}
-                  onClick={() => setSelectedId(pet.id)}
+                  // 잠긴 개체도 누를 수 있다. 다만 고르는 것이 아니라 그 개체에
+                  // 걸린 교환을 다시 띄운다 — 코드를 잃어버려도 되찾을 수 있어야 한다.
+                  disabled={phase !== "idle"}
+                  onClick={() =>
+                    pet.isLocked ? showLockedTrade(pet.id) : setSelectedId(pet.id)
+                  }
                   title={
                     pet.isLocked
-                      ? "다른 교환에 걸려 있습니다. 그 교환을 취소하거나 유효 시간이 지나면 다시 내놓을 수 있습니다."
+                      ? "이 개체에 걸린 교환을 다시 엽니다."
                       : undefined
                   }
                   className={`trade-pet-choice px-3 py-2 text-sm transition disabled:opacity-50 ${
@@ -351,7 +365,7 @@ export default function TradeSceneContainer({ onClose }: { onClose?: () => void 
                 >
                   {label(pet)}
                   {pet.isLocked ? (
-                    <span className="trade-pet-choice-lock-tag">교환 중</span>
+                    <span className="trade-pet-choice-lock-tag">교환 중 · 코드 보기</span>
                   ) : null}
                 </button>
               ))}

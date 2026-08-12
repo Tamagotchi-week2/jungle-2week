@@ -84,43 +84,12 @@ async function assertTradeablePet(tx: Tx, petId: string, userId: string) {
   return pet;
 }
 
-/**
- * 진행 중인 교환은 계정당 하나로 제한한다.
- *
- * 예전에는 개체마다 따로 걸 수 있어 한 계정이 여러 건을 동시에 들고 있었다.
- * 교환소는 콘솔이 하나뿐이라 그중 최신 건만 보여줬고, 그걸 취소하면 숨어 있던
- * 이전 건이 튀어나와 "취소했는데 왜 아직 진행 중이지" 로 보였다.
- *
- * 아직 상대가 없는 건(proposed)은 사용자가 잊은 것으로 보고 조용히 정리한다.
- * 상대가 이미 들어온 건(joined)은 함부로 없애지 않는다 — 저쪽이 내 확정을
- * 기다리고 있으므로, 그쪽을 먼저 처리하라고 알린다.
- */
-async function assertSingleActiveTrade(tx: Tx, userId: string) {
-  const active = await tx.trade.findMany({
-    where: {
-      status: { in: ['proposed', 'joined'] },
-      OR: [{ fromUserId: userId }, { toUserId: userId }],
-    },
-    select: { id: true, status: true, fromPetId: true, toPetId: true },
-  });
-
-  if (active.some((t) => t.status === 'joined')) {
-    throw new TradeError(
-      '이미 상대가 참여한 교환이 있습니다. 그 교환을 먼저 확정하거나 취소해 주세요.',
-    );
-  }
-  for (const stale of active) {
-    await invalidateTrade(tx, stale);
-  }
-}
-
 /** 내 성체를 걸고 교환 코드를 발급한다 (9장 / 17.4 1단계) */
 export async function createTrade(
   userId: string,
   petId: string,
 ): Promise<TradeCreateResponse> {
   return db.$transaction(async (tx) => {
-    await assertSingleActiveTrade(tx, userId);
     const pet = await assertTradeablePet(tx, petId, userId);
     const code = await generateUniqueCode(tx);
     const expiresAt = new Date(Date.now() + TRADE_CODE_TTL_MS);
@@ -168,11 +137,6 @@ export async function joinTrade(
     if (trade.fromUserId === userId) {
       throw new TradeError('자신이 제안한 교환에는 참여할 수 없습니다.');
     }
-
-    // 발급뿐 아니라 참여로도 교환이 열린다. 여기를 빼먹으면 내 제안 하나와
-    // 남의 교환 참여 하나가 동시에 살아 있어, 하나를 취소해도 화면이 다른
-    // 하나로 복귀한다.
-    await assertSingleActiveTrade(tx, userId);
 
     const pet = await assertTradeablePet(tx, petId, userId);
 
@@ -344,26 +308,27 @@ export interface TradeStatusView {
 }
 
 /**
- * 지금 내가 끼어 있는, 아직 끝나지 않은 교환.
+ * 그 개체를 묶고 있는, 아직 끝나지 않은 교환.
  *
- * 교환 진행 상태는 그동안 브라우저 메모리에만 있었다. 새로고침하면 화면은
- * 잊어버리는데 서버는 멀쩡히 기억하고 있어서, 개체가 잠긴 채 취소할 방법도
- * 없어졌다. 이 조회로 화면이 하던 교환에 다시 붙는다.
- *
- * /api/me 에 얹지 않는다. 자원을 먹을 때마다 불리는 엔드포인트라, 대부분 null 인
- * 값을 위해 매번 조인을 붙일 이유가 없다. 교환 화면에 들어올 때만 부른다.
+ * 교환은 개체마다 따로 걸 수 있으므로 "지금 진행 중인 교환" 이 하나로 정해지지
+ * 않는다. 그래서 계정이 아니라 **개체**를 기준으로 찾는다. 교환소에서 잠긴 개체를
+ * 누르면 그 개체에 걸린 코드가 화면에 다시 뜬다.
  *
  * 만료된 건은 먼저 정리하므로 여기로 새어 나오지 않는다.
  */
-export async function getActiveTrade(
+export async function getTradeByPet(
   userId: string,
+  petId: string,
 ): Promise<TradeStatusView | null> {
   await releaseExpiredTrades(userId);
 
   const trade = await db.trade.findFirst({
     where: {
       status: { in: ['proposed', 'joined'] },
-      OR: [{ fromUserId: userId }, { toUserId: userId }],
+      OR: [
+        { fromUserId: userId, fromPetId: petId },
+        { toUserId: userId, toPetId: petId },
+      ],
     },
     include: {
       fromPet: { include: { species: true } },
@@ -380,20 +345,16 @@ export async function getActiveTrade(
   if (!myPet) {
     return null;
   }
+  const other = isFrom ? trade.toPet : trade.fromPet;
 
   return {
     tradeId: trade.id,
     status: trade.status,
     code: trade.code,
     expiresAt: trade.expiresAt.toISOString(),
-    // 제안자인지 참여자인지에 따라 화면이 할 수 있는 일이 다르다. 화면이 그걸
-    // 판단할 수 있도록 알려준다 — 참여자는 확정 권한이 없다.
     iAmProposer: isFrom,
     myPet: toTradePetView(myPet),
-    theirPet: (() => {
-      const other = isFrom ? trade.toPet : trade.fromPet;
-      return other ? toTradePetView(other) : null;
-    })(),
+    theirPet: other ? toTradePetView(other) : null,
   };
 }
 

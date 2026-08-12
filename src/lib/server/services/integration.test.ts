@@ -33,7 +33,7 @@ import {
 import {
   cancelTrade,
   createTrade,
-  getActiveTrade,
+  getTradeByPet,
   joinTrade,
   releaseExpiredTrades,
   resolveTrade,
@@ -484,6 +484,26 @@ suite('서비스 계층 통합', () => {
       expect(cell?.hasNormal).toBe(true);
     });
 
+    it('예전에 쌓인 알비노 전용 기록도 일반 칸이 열린 것으로 읽는다', async () => {
+      const userId = await newUser();
+      const adult = await raiseToAdult(userId, 'air');
+
+      // registerSpecies 가 두 칸을 함께 켜기 전에 쌓였을 법한 상태를 만든다
+      const pet = await db.pet.findUniqueOrThrow({ where: { id: adult.id } });
+      await db.dexEntry.update({
+        where: {
+          userId_speciesId: { userId, speciesId: pet.speciesId! },
+        },
+        data: { hasNormal: false, hasAlbino: true },
+      });
+
+      const cell = (await getDex(userId)).cells.find((c) => c.name === '오목눈이');
+      // 저장된 값은 꺼져 있어도 읽을 때 켜져야 한다. 안 그러면 알비노를 가진
+      // 칸에 "미발견" 이 남는다.
+      expect(cell?.hasAlbino).toBe(true);
+      expect(cell?.hasNormal).toBe(true);
+    });
+
     it('교환으로 개체를 넘겨도 도감 칸은 닫히지 않는다', async () => {
       const a = await newUser();
       const b = await newUser();
@@ -645,77 +665,53 @@ suite('서비스 계층 통합', () => {
       await expect(createTrade(a, petA.id)).resolves.toBeTruthy();
     });
 
-    it('진행 중인 교환을 조회해 화면이 이어붙을 수 있다', async () => {
-      const a = await newUser();
-      const b = await newUser();
-      const petA = await raiseToAdult(a, 'air');
-      const petB = await raiseToAdult(b, 'land');
-
-      expect(await getActiveTrade(a)).toBeNull();
-
-      const created = await createTrade(a, petA.id);
-      const proposed = await getActiveTrade(a);
-      expect(proposed?.status).toBe('proposed');
-      expect(proposed?.code).toBe(created.code);
-      expect(proposed?.iAmProposer).toBe(true);
-      expect(proposed?.theirPet).toBeNull();
-
-      const joined = await joinTrade(b, created.code, petB.id);
-
-      // 같은 교환이라도 보는 사람에 따라 권한이 다르다. 이걸 뒤집으면
-      // 참여자에게 확정 버튼이 열리거나 제안자의 버튼이 죽는다.
-      const forProposer = await getActiveTrade(a);
-      expect(forProposer?.iAmProposer).toBe(true);
-      expect(forProposer?.myPet.id).toBe(petA.id);
-      expect(forProposer?.theirPet?.id).toBe(petB.id);
-
-      const forJoiner = await getActiveTrade(b);
-      expect(forJoiner?.iAmProposer).toBe(false);
-      expect(forJoiner?.myPet.id).toBe(petB.id);
-      expect(forJoiner?.theirPet?.id).toBe(petA.id);
-
-      // 끝난 교환은 더 이상 진행 중이 아니다
-      await resolveTrade(a, joined.tradeId, true);
-      expect(await getActiveTrade(a)).toBeNull();
-      expect(await getActiveTrade(b)).toBeNull();
-    });
-
-    it('진행 중인 교환은 계정당 하나뿐이다', async () => {
+    it('개체마다 따로 교환을 걸 수 있고 각자의 코드를 되찾을 수 있다', async () => {
       const a = await newUser();
       const petA = await raiseToAdult(a, 'air');
       const petB = await raiseToAdult(a, 'land');
 
       const first = await createTrade(a, petA.id);
-      // 두 번째를 발급하면 상대 없는 첫 건은 잊은 것으로 보고 정리된다.
-      // 그러지 않으면 하나를 취소해도 화면이 남은 건으로 복귀해 버린다.
       const second = await createTrade(a, petB.id);
+      expect(first.code).not.toBe(second.code);
 
-      const active = await getActiveTrade(a);
-      expect(active?.code).toBe(second.code);
-      expect(active?.code).not.toBe(first.code);
+      // 코드를 잃어버려도 개체를 짚으면 되찾을 수 있어야 한다
+      expect((await getTradeByPet(a, petA.id))?.code).toBe(first.code);
+      expect((await getTradeByPet(a, petB.id))?.code).toBe(second.code);
 
-      // 정리된 건에 걸려 있던 개체는 잠금이 풀려야 한다
+      // 하나를 취소해도 나머지는 그대로다
+      await cancelTrade(a, (await getTradeByPet(a, petA.id))!.tradeId);
+      expect(await getTradeByPet(a, petA.id)).toBeNull();
+      expect((await getTradeByPet(a, petB.id))?.code).toBe(second.code);
+
       const pets = await listAdultPets(a);
       expect(pets.pets.find((p) => p.id === petA.id)?.isLocked).toBe(false);
       expect(pets.pets.find((p) => p.id === petB.id)?.isLocked).toBe(true);
-
-      // 취소하면 남은 진행 건이 없다
-      await cancelTrade(a, (await getActiveTrade(a))!.tradeId);
-      expect(await getActiveTrade(a)).toBeNull();
     });
 
-    it('상대가 참여한 교환이 있으면 새로 발급하지 않는다', async () => {
+    it('개체 기준 조회는 보는 사람에 따라 권한을 다르게 알려준다', async () => {
       const a = await newUser();
       const b = await newUser();
       const petA = await raiseToAdult(a, 'air');
       const petB = await raiseToAdult(b, 'land');
-      const spare = await raiseToAdult(a, 'land');
 
       const created = await createTrade(a, petA.id);
-      await joinTrade(b, created.code, petB.id);
+      const joined = await joinTrade(b, created.code, petB.id);
 
-      // joined 는 상대가 내 확정을 기다리는 중이다. 말없이 없애면 안 된다.
-      await expect(createTrade(a, spare.id)).rejects.toThrow(GameRuleError);
+      // 같은 교환이라도 제안자만 확정할 수 있다. 뒤집으면 참여자에게 확정
+      // 버튼이 열리거나 제안자의 버튼이 죽는다.
+      const forProposer = await getTradeByPet(a, petA.id);
+      expect(forProposer?.iAmProposer).toBe(true);
+      expect(forProposer?.theirPet?.id).toBe(petB.id);
+
+      const forJoiner = await getTradeByPet(b, petB.id);
+      expect(forJoiner?.iAmProposer).toBe(false);
+      expect(forJoiner?.theirPet?.id).toBe(petA.id);
+
+      // 남의 개체로는 조회되지 않는다
+      expect(await getTradeByPet(a, petB.id)).toBeNull();
+
+      await resolveTrade(a, joined.tradeId, true);
+      expect(await getTradeByPet(a, petA.id)).toBeNull();
     });
 
     it('성체가 아니면 교환에 걸 수 없다', async () => {
