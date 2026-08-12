@@ -61,6 +61,18 @@ export async function hatchEgg(
       throw new GameRuleError('이미 육성 중인 개체가 있다');
     }
 
+    // 성체 완성 -> 도감 등록 + 보상 알 획득 -> 반복(1장) — 순환 고리 하나가
+    // 끝나야 다음이 시작된다. 이 검사가 없으면 활성 개체가 null 인 틈(성체
+    // 완성 직후, 보상을 아직 받기 전)에 다른 알을 부화시킬 수 있어 보상을
+    // 미룬 채로 다음 개체를 완성해 unclaimedRewards 가 계속 쌓일 수 있다.
+    const { unclaimedRewards } = await tx.user.findUniqueOrThrow({
+      where: { id: userId },
+      select: { unclaimedRewards: true },
+    });
+    if (unclaimedRewards > 0) {
+      throw new GameRuleError('먼저 보상 알을 받아야 한다');
+    }
+
     const stock = await tx.userEgg.findUnique({
       where: { userId_eggType: { userId, eggType } },
     });

@@ -438,7 +438,18 @@ export default function HouseScene() {
         <div className="absolute inset-0 bg-slate-950/70" />
 
         <div className="relative space-y-6 p-6">
-          {displayPet === null ? (
+          {/*
+            isFinalStage 는 `me`(즉시 로딩)에서 나오고, displayPet 은
+            lastAdultPet 을 따로 fetch 해야 해서 한 박자 늦게 채워진다. 그 사이
+            (pet === null && lastAdultPet === null) 순간에는 displayPet 이 null
+            이라 원래 아래 "부화시키세요" 화면이 잠깐 보였다 — 보상이 남아 있는데도
+            알을 부화시킬 수 있는 버튼이 눈에 들어오고, 실제로 눌리기도 했다.
+            그래서 isFinalStage 를 displayPet 유무보다 먼저 검사해, 그 순간에도
+            부화 화면 대신 (로딩 중인) 보상 선택 화면으로 빠지게 한다. 서버도
+            hatchEgg 에서 같은 조건을 막는다(pet.ts) — 화면은 사용자 경험을
+            위한 것이고 실제 방어는 서버가 한다.
+          */}
+          {displayPet === null && !isFinalStage ? (
             <div className="rounded-[28px] border border-slate-800/90 bg-slate-900/90 p-6 text-center">
               <p className="text-sm text-slate-400">
                 육성 중인 개체가 없습니다. 알을 하나 부화시키세요.
@@ -517,7 +528,12 @@ export default function HouseScene() {
                     dropActive ? "house-portrait-drop-active" : ""
                   } ${pet === null && lastAdultPet ? "house-portrait-final" : ""}`}
                 >
-                  {brokenSprite === spritePath ? (
+                  {displayPet === null ? (
+                    // isFinalStage 인데 lastAdultPet 이 아직 로딩 중인 순간이다.
+                    // spritePath 가 빈 문자열이라 그대로 <img> 에 넘기면 깨진
+                    // 아이콘이 잠깐 보인다.
+                    <span className="text-sm text-slate-500">불러오는 중...</span>
+                  ) : brokenSprite === spritePath ? (
                     // 84장이 모두 준비된 상태라 여기까지 오면 파일 누락이나 전송
                     // 실패다. 깨진 이미지 아이콘 대신 단계 이름을 보여준다.
                     <span className="text-sm text-slate-500">

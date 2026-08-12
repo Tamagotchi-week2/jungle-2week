@@ -210,6 +210,26 @@ suite('서비스 계층 통합', () => {
       await expect(hatchEgg(userId, 'air')).rejects.toThrow(GameRuleError);
     });
 
+    it('받지 않은 보상 알이 있으면 새로 부화할 수 없다', async () => {
+      const userId = await newUser();
+      await raiseToAdult(userId);
+
+      // 성체 완성 직후: activePet 은 null 로 돌아갔지만 보상은 아직 안 받았다.
+      // 이 틈에 부화가 허용되면 보상을 미룬 채로 다음 개체를 완성시킬 수 있어
+      // unclaimedRewards 가 계속 쌓인다 — 화면에서 실제로 관찰된 문제다.
+      const me = await getMeSnapshot(userId);
+      expect(me.unclaimedRewards).toBe(1);
+      expect(me.activePet).toBeNull();
+
+      await giveEgg(userId, 'land');
+      await expect(hatchEgg(userId, 'land')).rejects.toThrow(GameRuleError);
+
+      // 받고 나면 다시 부화할 수 있다
+      await openRewardEgg(userId);
+      await claimRewardEgg(userId, 'land');
+      await expect(hatchEgg(userId, 'land')).resolves.toBeTruthy();
+    });
+
     it('타인의 개체는 먹이거나 진화시킬 수 없다', async () => {
       const owner = await newUser();
       const other = await newUser();
@@ -633,6 +653,11 @@ suite('서비스 계층 통합', () => {
     it('개체마다 따로 교환을 걸 수 있고 각자의 코드를 되찾을 수 있다', async () => {
       const a = await newUser();
       const petA = await raiseToAdult(a, 'air');
+      // 성체를 완성하면 보상 알을 받기 전까지 다음 개체를 부화시킬 수 없다
+      // (pet.ts) — 이 테스트가 원하는 건 교환 격리 검증이지 보상 흐름이
+      // 아니므로, 두 번째 개체를 시작하기 전에 먼저 받아 치운다.
+      await openRewardEgg(a);
+      await claimRewardEgg(a, 'air');
       const petB = await raiseToAdult(a, 'land');
 
       const first = await createTrade(a, petA.id);
