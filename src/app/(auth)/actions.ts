@@ -3,7 +3,11 @@
 import { AuthError } from 'next-auth';
 
 import { signIn, signOut } from '@/lib/server/auth';
-import { createUser, NicknameTakenError } from '@/lib/server/services/user';
+import {
+  createUser,
+  isNicknameAvailable,
+  NicknameTakenError,
+} from '@/lib/server/services/user';
 
 export type AuthActionState = { error: string } | undefined;
 
@@ -28,6 +32,24 @@ function validateSignupInput(nickname: string, password: string): string | null 
     return `비밀번호는 ${PASSWORD_MIN}자 이상이어야 합니다.`;
   }
   return null;
+}
+
+export type NicknameCheckResult =
+  | { available: true }
+  | { available: false; reason: string };
+
+/** 가입 폼의 "중복확인" 버튼에서 호출한다. */
+export async function checkNicknameAvailable(nickname: string): Promise<NicknameCheckResult> {
+  if (nickname.length < NICKNAME_MIN || nickname.length > NICKNAME_MAX) {
+    return {
+      available: false,
+      reason: `닉네임은 ${NICKNAME_MIN}~${NICKNAME_MAX}자여야 합니다.`,
+    };
+  }
+  const available = await isNicknameAvailable(nickname);
+  return available
+    ? { available: true }
+    : { available: false, reason: '이미 사용 중인 닉네임입니다.' };
 }
 
 export async function signup(

@@ -54,9 +54,93 @@ button {
   image-rendering: crisp-edges;
 }
 
+/* 스크롤 기능은 유지하되 스크롤바만 시각적으로 숨긴다. */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 ::selection {
   background: #f8b40033;
   color: var(--background);
+}
+
+/* 로그인/가입 화면 배경 숲을 돌아다니는 장식용 동물. 클릭·상호작용은 없다. */
+.login-critter {
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+}
+/* 배경 숲 이미지 속 나무들처럼, 땅에 붙어있는 흐린 그림자를 깐다 — 동물은 그 위에서 움직이고 그림자는 제자리에 머문다. */
+.login-critter::after {
+  content: '';
+  position: absolute;
+  bottom: 2%;
+  left: 50%;
+  width: 70%;
+  height: 20%;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0) 72%);
+  filter: blur(1.5px);
+}
+.login-critter-sprite-wrap {
+  position: relative;
+  display: block;
+  animation: login-critter-bob 3s ease-in-out infinite;
+}
+.login-critter-sprite {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(3px 5px 3px rgba(0, 0, 0, 0.4));
+}
+/* 원본 이미지는 그대로 두고, 그 위에 실루엣 모양의 반투명 검은 막을 한 겹 덮는다. */
+.login-critter-tint {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
+@keyframes login-critter-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+/* 배경음악 음소거 버튼 — 다른 게임 UI와 같은 원목 판자 텍스처. */
+.mute-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 3px solid #3d2817;
+  border-radius: 9999px;
+  background: linear-gradient(rgba(74, 42, 20, 0.15), rgba(74, 42, 20, 0.15)),
+    url("/sprites/house/wood-card-brown.png") center/cover;
+  box-shadow: inset 0 0 0 2px #d79b55, 3px 4px 0 rgba(19, 12, 7, 0.55);
+  font-size: 0.95rem;
+  transition: transform 0.12s ease, filter 0.12s ease;
+}
+.mute-button:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+.mute-button:active {
+  transform: translateY(2px);
+  box-shadow: inset 0 0 0 2px #d79b55, 1px 2px 0 rgba(19, 12, 7, 0.55);
 }
 
 .village-bg-frame {

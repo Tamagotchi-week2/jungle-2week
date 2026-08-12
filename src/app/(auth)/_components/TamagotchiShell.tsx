@@ -45,7 +45,7 @@ const PLAID_BACKGROUND = [
 /** 달걀 실루엣: 수평 반지름은 균일하되 수직 반지름을 위(60%)/아래(40%)로 달리 줘 위가 좁고 아래가 둥근 달걀 곡선을 만든다. */
 const EGG_RADIUS = '50% / 60% 60% 40% 40%';
 
-/** 창 폭·높이 양쪽에 반응해 달걀이 흘러가며 커지고 작아진다. 180px 는 패딩·체인·건너뛰기 버튼이 쓰는 여유분. */
+/** 창 폭·높이 양쪽에 반응해 달걀이 흘러가며 커지고 작아진다. 180px 는 패딩·체인이 쓰는 여유분. */
 const EGG_WIDTH = 'clamp(200px, min(46vw, calc((100vh - 180px) * 0.75)), 340px)';
 
 /** 화면 위·아래에 놓는 장식용 메뉴 아이콘 4종. 5x5 격자에 켜진 칸만 채운다 — 실제 기능은 없고 다마고치 특유의 아이콘 줄 느낌만 낸다. */
@@ -215,12 +215,6 @@ export function TamagotchiShell({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  function skip() {
-    timers.current.forEach(clearTimeout);
-    timers.current = [];
-    setPhase('on');
-  }
-
   return (
     <div className="flex flex-col items-center gap-4">
       {/*
@@ -229,7 +223,6 @@ export function TamagotchiShell({ children }: { children: React.ReactNode }) {
         아니라 이 빈 지점을 화면 중앙에 놓아버린다(달걀이 아래로 처져 보이는 원인이었다).
       */}
       <div
-        onClick={phase !== 'on' ? skip : undefined}
         className="relative"
         style={{
           width: EGG_WIDTH,
@@ -310,7 +303,7 @@ export function TamagotchiShell({ children }: { children: React.ReactNode }) {
 
                 {phase === 'on' && (
                   <div
-                    className="flex h-full w-full items-center justify-center overflow-y-auto bg-[#fdf6ea]"
+                    className="no-scrollbar flex h-full w-full items-center-safe justify-center-safe overflow-y-auto bg-[#fdf6ea]"
                     style={{ animation: 'tamagotchi-content-rise 0.4s ease-out both' }}
                   >
                     {children}
@@ -355,16 +348,6 @@ export function TamagotchiShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </div>
-
-      {phase !== 'on' && (
-        <button
-          type="button"
-          onClick={skip}
-          className="text-xs text-zinc-400 underline underline-offset-2 hover:text-zinc-600 dark:hover:text-zinc-300"
-        >
-          건너뛰기
-        </button>
-      )}
     </div>
   );
 }

@@ -28,6 +28,15 @@ function isUniqueConstraintError(error: unknown): boolean {
   );
 }
 
+/** 가입 폼에서 실시간 중복확인에 쓴다. 최종 검증은 여전히 createUser 의 유니크 제약이 맡는다. */
+export async function isNicknameAvailable(nickname: string): Promise<boolean> {
+  const existing = await db.user.findUnique({
+    where: { nickname },
+    select: { id: true },
+  });
+  return existing === null;
+}
+
 /**
  * 가입 처리. 비밀번호 해시 저장 후 초기 셋업(setupNewUser)을 이어서 호출한다 (17.1).
  */
