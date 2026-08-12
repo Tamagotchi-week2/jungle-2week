@@ -239,7 +239,7 @@ export default function ShoreScene() {
         />
         <div className="absolute inset-0 bg-slate-950/45" />
 
-        <div className="shore-layout relative p-6">
+        <div className="shore-layout relative">
           <div className="shore-status-card p-5">
             <p className="shore-card-label text-xs tracking-[0.24em]">낚시 상태</p>
             <p className="shore-status-message mt-3 text-xl font-semibold">{message}</p>
@@ -288,15 +288,17 @@ export default function ShoreScene() {
           </div>
 
           <div className="shore-action-card p-5">
-            <p className="shore-card-label text-xs tracking-[0.24em]">조작 안내</p>
-            <p className="mt-3 text-lg font-semibold">
-              <span className="shore-space-key">스페이스바</span>를 눌러 {state === "bite" ? "낚아채세요!" : "낚싯대를 던지세요"}
+            <p className="shore-card-label text-xs tracking-[0.24em]">
+              {feedback ? "낚시 결과" : "조작 안내"}
             </p>
+            {feedback ? (
+              <p className="shore-action-result mt-3 text-lg font-semibold">{feedback}</p>
+            ) : (
+              <p className="mt-3 text-lg font-semibold">
+                <span className="shore-space-key">스페이스바</span>를 눌러 {state === "bite" ? "낚아채세요!" : "낚싯대를 던지세요"}
+              </p>
+            )}
             <p className="mt-2 min-h-5 text-sm text-amber-100/80">{loading ? "처리 중..." : " "}</p>
-          </div>
-
-          <div className={`shore-feedback p-3 text-sm ${feedback ? "shore-feedback-visible" : ""}`}>
-            {feedback || "결과 메시지 대기"}
           </div>
         </div>
       </section>

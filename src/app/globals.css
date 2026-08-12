@@ -647,15 +647,19 @@ button {
 .shore-layout {
   height:100%;
   display:grid;
-  grid-template-rows:150px minmax(300px,1fr) 118px 46px;
+  grid-template-rows:150px minmax(300px,1fr) 118px;
   gap:1rem;
+  padding:1.5rem 0;
 }
 .shore-status-card,
 .shore-action-card {
   overflow:hidden;
   border:5px solid #4c321b;
   border-radius:7px;
-  background:linear-gradient(rgba(62,37,18,.08),rgba(62,37,18,.08)),url("/sprites/house/wood-card-brown.png") center/cover;
+  background-image:linear-gradient(rgba(62,37,18,.08),rgba(62,37,18,.08)),url("/sprites/house/wood-card-brown.png");
+  background-position:center,center;
+  background-repeat:no-repeat,no-repeat;
+  background-size:auto,106% auto;
   color:#fff1c8;
   box-shadow:inset 0 0 0 2px #d0934d,4px 4px 0 rgba(27,17,9,.5);
   text-shadow:2px 2px 0 #402414;
@@ -708,20 +712,11 @@ button {
   box-shadow:inset 0 -2px 0 #ba7c31,2px 2px 0 #382113;
   text-shadow:1px 1px 0 #fff0b0;
 }
-.shore-feedback {
-  min-height:46px;
-  visibility:hidden;
-  color:#f5efcc;
-  text-align:center;
-  border:3px solid #31512d;
-  border-radius:5px;
-  background:rgba(36,81,49,.9);
-  box-shadow:inset 0 0 0 2px #729457;
-}
-.shore-feedback-visible { visibility:visible; }
+.shore-action-result { color:#fff3ad; text-shadow:2px 2px 0 #51301a; animation:shore-result-pop .3s steps(3,end); }
+@keyframes shore-result-pop { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:none; } }
 @media (max-height:760px) {
   .shore-stage { height:600px; min-height:600px; }
-  .shore-layout { grid-template-rows:125px minmax(260px,1fr) 100px 40px; gap:.65rem; padding:1rem; }
+  .shore-layout { grid-template-rows:125px minmax(260px,1fr) 100px; gap:.65rem; padding:1rem 0; }
   .shore-sprite-space { height:220px; width:220px; }
 }
 
