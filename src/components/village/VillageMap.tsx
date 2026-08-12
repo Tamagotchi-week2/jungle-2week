@@ -54,7 +54,7 @@ const MAX_COLLISION_STEP_PIXELS = 8;
 const PLAYER_RADIUS = 0.28;
 const POSITION_SYNC_INTERVAL_MS = 50;
 const WALK_FRAME_INTERVAL_MS = 120;
-const SHOW_COLLISION_DEBUG = process.env.NODE_ENV === "development";
+const SHOW_COLLISION_DEBUG = false;
 
   // 이미지의 3x2 밭 전체를 하나의 원형 상호작용 영역으로 취급한다.
   // 낚시터 아이콘이 아니라 실제 물가 쪽을 기준점으로 삼는다.
