@@ -85,7 +85,7 @@ export default function BackgroundMusic({ src }: BackgroundMusicProps) {
         type="button"
         onClick={toggleMute}
         aria-label={muted ? "배경음악 켜기" : "배경음악 끄기"}
-        className="fixed bottom-4 right-4 z-[60] flex h-9 w-9 items-center justify-center rounded-full border border-slate-600/80 bg-slate-900/80 text-sm text-slate-100 backdrop-blur transition hover:border-slate-400"
+        className="mute-button fixed bottom-4 right-4 z-[60]"
       >
         {muted ? "🔇" : "🔊"}
       </button>

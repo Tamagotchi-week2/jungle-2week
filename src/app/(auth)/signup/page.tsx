@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-import { signup } from '../actions';
+import { checkNicknameAvailable, signup } from '../actions';
 import { CredentialsForm } from '../_components/CredentialsForm';
 import { cq } from '../_components/scale';
 import { TypewriterText } from '../_components/TypewriterText';
@@ -20,6 +20,7 @@ export default function SignupPage() {
       <CredentialsForm
         action={signup}
         submitLabel="가입하기"
+        checkNickname={checkNicknameAvailable}
         footer={
           <p className="text-center" style={{ fontSize: cq(11), color: '#5a3a1f99' }}>
             이미 계정이 있나요?{' '}
