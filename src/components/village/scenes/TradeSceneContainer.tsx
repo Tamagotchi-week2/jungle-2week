@@ -42,7 +42,7 @@ function label(pet: TradePetView) {
   return `${pet.speciesName}${pet.isAlbino ? " (알비노)" : ""}`;
 }
 
-export default function TradeSceneContainer({ onClose }: { onClose?: () => void }) {
+export default function TradeSceneContainer() {
   const { refresh } = useMe();
 
   const [pets, setPets] = useState<TradePetView[]>([]);
@@ -335,15 +335,6 @@ export default function TradeSceneContainer({ onClose }: { onClose?: () => void 
     <div className="trade-station mx-auto flex max-w-4xl flex-col gap-5 p-4">
       <header className="trade-station-header flex items-center justify-between">
         <h2 className="text-xl font-semibold">펫 교환소</h2>
-        {onClose && (
-          <button
-            type="button"
-            onClick={onClose}
-            className="trade-station-small-button px-3 py-1 text-sm"
-          >
-            닫기
-          </button>
-        )}
       </header>
 
       {pets.length === 0 ? (
