@@ -125,6 +125,7 @@ export default function DexScene() {
                           src={adultSprite(cell.eggType, cell.combo, false)}
                           alt={cell.name}
                           style={{ imageRendering: "pixelated" }}
+                          draggable={false}
                         />
                       ) : null}
                       {!acquired ? <div className="dex-book-slot-mask">???</div> : null}
@@ -166,6 +167,7 @@ export default function DexScene() {
                           src={adultSprite(selected.eggType, selected.combo, false)}
                           alt={selected.name}
                           style={{ imageRendering: "pixelated" }}
+                          draggable={false}
                         />
                       ) : null}
                       {!selected?.hasNormal ? (
@@ -179,6 +181,7 @@ export default function DexScene() {
                           src={adultSprite(selected.eggType, selected.combo, true)}
                           alt={`${selected.name} 알비노`}
                           style={{ imageRendering: "pixelated" }}
+                          draggable={false}
                         />
                       ) : null}
                       {!selectedHasAlbino ? (

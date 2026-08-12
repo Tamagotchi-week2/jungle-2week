@@ -413,12 +413,10 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
             const facilityImage = facility.scene === "farm" ? farmIcon : facility.image;
 
             return (
-              <button
+              <div
                 key={`facility-${x}-${y}`}
-                type="button"
                 style={style}
-                className="absolute flex items-center justify-center"
-                onClick={() => handleFacilityInteraction(facility.scene)}
+                className="pointer-events-none absolute flex items-center justify-center"
               >
                 <img
                   src={facilityImage}
@@ -431,7 +429,7 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
                   }}
                   draggable={false}
                 />
-              </button>
+              </div>
             );
           }),
         )}

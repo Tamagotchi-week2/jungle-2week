@@ -467,6 +467,7 @@ export default function HouseScene() {
                         alt={`${EGG_LABEL[type]} 알`}
                         className="h-9 w-9 object-contain"
                         style={{ imageRendering: "pixelated" }}
+                        draggable={false}
                       />
                       <span>{eggs[type]}</span>
                     </span>
@@ -539,6 +540,7 @@ export default function HouseScene() {
                       className="h-full w-full object-contain"
                       style={{ imageRendering: "pixelated" }}
                       onError={() => setBrokenSprite(spritePath)}
+                      draggable={false}
                     />
                   )}
                 </div>
@@ -647,6 +649,7 @@ export default function HouseScene() {
                           alt={`${EGG_LABEL[type]} 알`}
                           className="h-9 w-9 object-contain"
                           style={{ imageRendering: "pixelated" }}
+                          draggable={false}
                         />
                         <span>{eggs[type]}</span>
                       </span>
@@ -681,6 +684,7 @@ export default function HouseScene() {
           aria-hidden="true"
           className="pointer-events-none fixed z-[999] h-16 w-16 -translate-x-1/2 -translate-y-1/2 object-contain opacity-90 drop-shadow-[0_4px_10px_rgba(0,0,0,0.45)]"
           style={{ left: touchPoint.x, top: touchPoint.y, imageRendering: "pixelated" }}
+          draggable={false}
         />
       ) : null}
       {/* 여기서 확인해도 도감의 NEW 는 지우지 않는다. 도감을 열었을 때 어떤
@@ -713,6 +717,7 @@ export default function HouseScene() {
                 src={petSprite({ ...lastAdultPet, stage: FINAL_GROWTH_STAGE, stage2Trait: null })}
                 alt={lastAdultPet.speciesName ?? STAGE_NAME[FINAL_GROWTH_STAGE]}
                 style={{ imageRendering: "pixelated" }}
+                draggable={false}
               />
             ) : null}
           </div>
@@ -758,6 +763,7 @@ export default function HouseScene() {
                 alt={EGG_LABEL[rewardRevealed ? rewardReveal.granted : rewardReveal.chosen]}
                 className={rewardRevealed && rewardReveal.transformed ? "egg-reveal-pop" : ""}
                 style={{ imageRendering: "pixelated" }}
+                draggable={false}
               />
             </div>
             <p className="evolution-celebrate-copy">
