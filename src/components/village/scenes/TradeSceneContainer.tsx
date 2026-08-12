@@ -273,6 +273,23 @@ export default function TradeSceneContainer({ onClose }: { onClose?: () => void 
     await Promise.all([loadPets(), refresh()]);
   }
 
+  /**
+   * 콘솔만 발급 화면으로 되돌린다.
+   *
+   * reset() 과 달리 "교환을 끝냈다" 는 뜻이 아니다. 서버의 교환은 그대로 살아
+   * 있고, 잠긴 칸을 다시 누르면 코드와 함께 돌아온다. 다른 개체를 짚었을 때
+   * 화면이 이전 교환에 머물러 있으면 새 코드를 발급할 방법이 없다.
+   */
+  function backToIssueView() {
+    if (phase === "idle") return;
+    stopPolling();
+    setPhase("idle");
+    setStatus(null);
+    setCode("");
+    setNotice(null);
+    setError(null);
+  }
+
   function reset() {
     stopPolling();
     setPhase("idle");
@@ -365,7 +382,14 @@ export default function TradeSceneContainer({ onClose }: { onClose?: () => void 
                     // 테두리는 언제나 방금 누른 개체를 따라간다. 교환이 진행
                     // 중이라고 커서를 고정해 두면 눌러도 아무 반응이 없어 보인다.
                     setSelectedId(pet.id);
-                    if (pet.isLocked) void showLockedTrade(pet.id);
+                    if (pet.isLocked) {
+                      void showLockedTrade(pet.id);
+                    } else {
+                      // 걸려 있지 않은 개체를 짚었다면 그 개체로 새 교환을 걸려는
+                      // 것이다. 콘솔을 발급 화면으로 되돌린다. 서버의 교환은
+                      // 그대로 두므로 잠긴 칸을 다시 누르면 언제든 돌아온다.
+                      backToIssueView();
+                    }
                   }}
                   title={
                     pet.isLocked

@@ -312,6 +312,16 @@ button {
   /* 눌러서 코드를 되찾을 수 있는 칸이다. 금지 커서를 띄우면 못 누르는 것처럼 보인다 */
   cursor: pointer;
 }
+/* 잠긴 칸을 지금 보고 있을 때. 두 클래스가 겹치면 뒤에 선언된 locked 가
+   selected 의 테두리를 덮어써서, 눌러도 강조가 보이지 않았다. 붉은 바탕은
+   그대로 두고 테두리만 노랗게 되돌린다. */
+.trade-pet-choice-locked.trade-pet-choice-selected {
+  border-color: #f2d168;
+  background: linear-gradient(#9c4a3f, #6d2f28);
+  box-shadow: inset 0 0 0 2px #f0c06a, 3px 3px 0 #3a1512;
+  opacity: 1;
+}
+
 .trade-pet-choice-lock-tag {
   margin-left: .45rem;
   padding: .05rem .35rem;
