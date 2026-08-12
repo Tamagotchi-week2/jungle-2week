@@ -299,6 +299,29 @@ button {
 .trade-station-small-button:hover:not(:disabled),
 .trade-station-primary:hover:not(:disabled) { filter:brightness(1.14); transform:translateY(-1px); }
 .trade-pet-choice-selected { border-color:#f2d168; background:linear-gradient(#76943e,#496a2c); box-shadow:inset 0 0 0 2px #b8d56b,3px 3px 0 #263715; }
+
+/* 다른 교환에 걸려 있는 개체. 교환이 끝난 것과 달리 잠시 묶인 것뿐이라
+   목록에 남기되, 붉게 눌러 지금 고를 수 없다는 것을 눈으로 알린다. */
+.trade-pet-choice-locked {
+  border-color: #7e2f2a;
+  background: linear-gradient(#9c4a3f, #6d2f28);
+  color: #ffd8d2;
+  box-shadow: inset 0 0 0 2px rgba(255, 160, 145, .22), 3px 3px 0 #3a1512;
+  text-shadow: 2px 2px 0 #45100c;
+  /* disabled 기본 흐림까지 겹치면 글씨가 안 보인다 */
+  opacity: .85 !important;
+  cursor: not-allowed;
+}
+.trade-pet-choice-lock-tag {
+  margin-left: .45rem;
+  padding: .05rem .35rem;
+  border: 1px solid #ffb3a8;
+  border-radius: 4px;
+  font-size: .62em;
+  letter-spacing: .06em;
+  vertical-align: middle;
+  text-shadow: none;
+}
 .trade-code-input {
   border:3px solid #3e2917;
   border-radius:6px;

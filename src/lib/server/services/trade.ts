@@ -84,12 +84,43 @@ async function assertTradeablePet(tx: Tx, petId: string, userId: string) {
   return pet;
 }
 
+/**
+ * 진행 중인 교환은 계정당 하나로 제한한다.
+ *
+ * 예전에는 개체마다 따로 걸 수 있어 한 계정이 여러 건을 동시에 들고 있었다.
+ * 교환소는 콘솔이 하나뿐이라 그중 최신 건만 보여줬고, 그걸 취소하면 숨어 있던
+ * 이전 건이 튀어나와 "취소했는데 왜 아직 진행 중이지" 로 보였다.
+ *
+ * 아직 상대가 없는 건(proposed)은 사용자가 잊은 것으로 보고 조용히 정리한다.
+ * 상대가 이미 들어온 건(joined)은 함부로 없애지 않는다 — 저쪽이 내 확정을
+ * 기다리고 있으므로, 그쪽을 먼저 처리하라고 알린다.
+ */
+async function assertSingleActiveTrade(tx: Tx, userId: string) {
+  const active = await tx.trade.findMany({
+    where: {
+      status: { in: ['proposed', 'joined'] },
+      OR: [{ fromUserId: userId }, { toUserId: userId }],
+    },
+    select: { id: true, status: true, fromPetId: true, toPetId: true },
+  });
+
+  if (active.some((t) => t.status === 'joined')) {
+    throw new TradeError(
+      '이미 상대가 참여한 교환이 있습니다. 그 교환을 먼저 확정하거나 취소해 주세요.',
+    );
+  }
+  for (const stale of active) {
+    await invalidateTrade(tx, stale);
+  }
+}
+
 /** 내 성체를 걸고 교환 코드를 발급한다 (9장 / 17.4 1단계) */
 export async function createTrade(
   userId: string,
   petId: string,
 ): Promise<TradeCreateResponse> {
   return db.$transaction(async (tx) => {
+    await assertSingleActiveTrade(tx, userId);
     const pet = await assertTradeablePet(tx, petId, userId);
     const code = await generateUniqueCode(tx);
     const expiresAt = new Date(Date.now() + TRADE_CODE_TTL_MS);
@@ -137,6 +168,11 @@ export async function joinTrade(
     if (trade.fromUserId === userId) {
       throw new TradeError('자신이 제안한 교환에는 참여할 수 없습니다.');
     }
+
+    // 발급뿐 아니라 참여로도 교환이 열린다. 여기를 빼먹으면 내 제안 하나와
+    // 남의 교환 참여 하나가 동시에 살아 있어, 하나를 취소해도 화면이 다른
+    // 하나로 복귀한다.
+    await assertSingleActiveTrade(tx, userId);
 
     const pet = await assertTradeablePet(tx, petId, userId);
 

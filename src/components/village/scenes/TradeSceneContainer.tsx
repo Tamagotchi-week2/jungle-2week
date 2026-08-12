@@ -75,16 +75,23 @@ export default function TradeSceneContainer({ onClose }: { onClose?: () => void 
       return;
     }
     const body = (await res.json()) as AdultPetsResponse;
-    // 교환을 마친 개체와, 아직 다른 교환에 걸려 있는 개체를 모두 뺀다.
-    // 후자는 isTraded 가 false 라 예전에는 후보로 보였고, 고르면 서버가
-    // 거절해 "왜 안 되지" 로 끝났다. loadPets 는 교환 시작 전이나 끝난 뒤에만
-    // 부르므로, 내 진행 중인 개체가 여기서 사라질 일은 없다.
-    const tradable = body.pets.filter((p) => !p.isTraded && !p.isLocked);
-    setPets(tradable);
+
+    // 교환을 마친 개체만 뺀다. 잠긴 개체는 **교환된 것이 아니라 잠시 묶인 것**
+    // 뿐이라 목록에서 감추면 "내 개체가 어디 갔지" 가 된다. 대신 뒤로 밀고
+    // 붉게 표시해 지금 고를 수 없다는 사실을 눈으로 알린다.
+    const usable = body.pets.filter((p) => !p.isTraded);
+    const ordered = [
+      ...usable.filter((p) => !p.isLocked),
+      ...usable.filter((p) => p.isLocked),
+    ];
+    setPets(ordered);
+
+    // 기본 선택은 고를 수 있는 것 중에서 잡는다
+    const selectable = ordered.filter((p) => !p.isLocked);
     setSelectedId((current) =>
-      current && tradable.some((p) => p.id === current)
+      current && selectable.some((p) => p.id === current)
         ? current
-        : (tradable[0]?.id ?? null),
+        : (selectable[0]?.id ?? null),
     );
     setLoadingPets(false);
   }, []);
@@ -326,15 +333,26 @@ export default function TradeSceneContainer({ onClose }: { onClose?: () => void 
                 <button
                   key={pet.id}
                   type="button"
-                  disabled={phase !== "idle"}
+                  // 잠긴 개체는 보이되 고를 수는 없다. 골라도 서버가 거절한다.
+                  disabled={phase !== "idle" || pet.isLocked}
                   onClick={() => setSelectedId(pet.id)}
+                  title={
+                    pet.isLocked
+                      ? "다른 교환에 걸려 있습니다. 그 교환을 취소하거나 유효 시간이 지나면 다시 내놓을 수 있습니다."
+                      : undefined
+                  }
                   className={`trade-pet-choice px-3 py-2 text-sm transition disabled:opacity-50 ${
+                    pet.isLocked ? "trade-pet-choice-locked" : ""
+                  } ${
                     pet.id === selectedId
                       ? "trade-pet-choice-selected"
                       : ""
                   }`}
                 >
                   {label(pet)}
+                  {pet.isLocked ? (
+                    <span className="trade-pet-choice-lock-tag">교환 중</span>
+                  ) : null}
                 </button>
               ))}
             </div>

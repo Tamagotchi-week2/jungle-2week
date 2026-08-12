@@ -464,6 +464,49 @@ suite('서비스 계층 통합', () => {
     });
   });
 
+  describe('도감', () => {
+    it('알비노를 얻으면 같은 종의 일반 칸도 함께 열린다', async () => {
+      const userId = await newUser();
+      await giveEgg(userId, 'air');
+      await fillResources(userId);
+
+      // 부화 판정은 5% 라 그대로 두면 시험이 불안정하다. 부화시킨 뒤 알비노로
+      // 바꿔 진화 경로(registerSpecies)만 결정적으로 확인한다.
+      const { pet } = await hatchEgg(userId, 'air');
+      await db.pet.update({ where: { id: pet.id }, data: { isAlbino: true } });
+
+      await raiseOneStage(userId, pet.id, 'crop', BALANCE.STAGE2_FEED_COUNT);
+      await raiseOneStage(userId, pet.id, 'crop', BALANCE.STAGE3_FEED_COUNT);
+
+      const cell = (await getDex(userId)).cells.find((c) => c.name === '오목눈이');
+      expect(cell?.hasAlbino).toBe(true);
+      // 알비노는 상위 호환이다. 같은 종을 일반으로 한 번 더 키우게 만들지 않는다.
+      expect(cell?.hasNormal).toBe(true);
+    });
+
+    it('교환으로 개체를 넘겨도 도감 칸은 닫히지 않는다', async () => {
+      const a = await newUser();
+      const b = await newUser();
+      const petA = await raiseToAdult(a, 'air');
+      const petB = await raiseToAdult(b, 'land');
+
+      const beforeCompleted = (await getDex(a)).completed;
+      expect(beforeCompleted).toBe(1);
+
+      const created = await createTrade(a, petA.id);
+      const joined = await joinTrade(b, created.code, petB.id);
+      await resolveTrade(a, joined.tradeId, true);
+
+      // 오목눈이는 이제 b 의 것이다. 그래도 a 의 도감에는 남아야 한다 —
+      // 도감은 "지금 가진 것" 이 아니라 "본 적 있는 것" 의 기록이다.
+      const after = await getDex(a);
+      expect(after.cells.find((c) => c.name === '오목눈이')?.hasNormal).toBe(true);
+      expect(after.completed).toBe(2);
+
+      expect((await db.pet.findUniqueOrThrow({ where: { id: petA.id } })).ownerId).toBe(b);
+    });
+  });
+
   describe('교환', () => {
     it('두 계정이 개체를 주고받고 양쪽 도감에 등록된다', async () => {
       const a = await newUser();
@@ -635,6 +678,44 @@ suite('서비스 계층 통합', () => {
       await resolveTrade(a, joined.tradeId, true);
       expect(await getActiveTrade(a)).toBeNull();
       expect(await getActiveTrade(b)).toBeNull();
+    });
+
+    it('진행 중인 교환은 계정당 하나뿐이다', async () => {
+      const a = await newUser();
+      const petA = await raiseToAdult(a, 'air');
+      const petB = await raiseToAdult(a, 'land');
+
+      const first = await createTrade(a, petA.id);
+      // 두 번째를 발급하면 상대 없는 첫 건은 잊은 것으로 보고 정리된다.
+      // 그러지 않으면 하나를 취소해도 화면이 남은 건으로 복귀해 버린다.
+      const second = await createTrade(a, petB.id);
+
+      const active = await getActiveTrade(a);
+      expect(active?.code).toBe(second.code);
+      expect(active?.code).not.toBe(first.code);
+
+      // 정리된 건에 걸려 있던 개체는 잠금이 풀려야 한다
+      const pets = await listAdultPets(a);
+      expect(pets.pets.find((p) => p.id === petA.id)?.isLocked).toBe(false);
+      expect(pets.pets.find((p) => p.id === petB.id)?.isLocked).toBe(true);
+
+      // 취소하면 남은 진행 건이 없다
+      await cancelTrade(a, (await getActiveTrade(a))!.tradeId);
+      expect(await getActiveTrade(a)).toBeNull();
+    });
+
+    it('상대가 참여한 교환이 있으면 새로 발급하지 않는다', async () => {
+      const a = await newUser();
+      const b = await newUser();
+      const petA = await raiseToAdult(a, 'air');
+      const petB = await raiseToAdult(b, 'land');
+      const spare = await raiseToAdult(a, 'land');
+
+      const created = await createTrade(a, petA.id);
+      await joinTrade(b, created.code, petB.id);
+
+      // joined 는 상대가 내 확정을 기다리는 중이다. 말없이 없애면 안 된다.
+      await expect(createTrade(a, spare.id)).rejects.toThrow(GameRuleError);
     });
 
     it('성체가 아니면 교환에 걸 수 없다', async () => {

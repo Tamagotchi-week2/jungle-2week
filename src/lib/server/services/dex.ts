@@ -27,17 +27,31 @@ export async function registerSpecies(
   speciesId: number,
   isAlbino: boolean,
 ): Promise<void> {
+  // 알비노는 상위 호환이다. 알비노를 얻으면 일반 칸도 함께 연다 — 같은 종을
+  // 일반으로 한 번 더 키우게 만들 이유가 없고, 완성도 계산이 이미 알비노만으로도
+  // 칸을 완성 처리하므로(8장) 표시만 어긋나 있었다.
   await tx.dexEntry.upsert({
     where: { userId_speciesId: { userId, speciesId } },
-    update: isAlbino ? { hasAlbino: true } : { hasNormal: true },
+    update: isAlbino ? { hasNormal: true, hasAlbino: true } : { hasNormal: true },
     create: {
       userId,
       speciesId,
-      hasNormal: !isAlbino,
+      hasNormal: true,
       hasAlbino: isAlbino,
     },
   });
 }
+
+/**
+ * 한 번 열린 도감 칸은 **다시 닫히지 않는다.**
+ *
+ * 교환으로 개체를 넘겨도 dexEntry 는 그대로 둔다. 도감은 "지금 가진 것"이 아니라
+ * "본 적 있는 것"의 기록이고, 넘길 때마다 칸이 닫히면 교환할수록 도감이 비어
+ * 24종 완성이 사실상 불가능해진다 (8장 · 9장).
+ *
+ * 그래서 이 파일에는 dexEntry 를 지우거나 false 로 되돌리는 코드가 없다.
+ * 소유권 이전(trade.ts)도 pet.ownerId 만 옮기고 도감은 건드리지 않는다.
+ */
 
 /**
  * 도감 24칸 전체.
