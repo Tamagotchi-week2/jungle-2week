@@ -10,6 +10,7 @@
  */
 
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 
 interface ModalProps {
   open: boolean;
@@ -52,7 +53,7 @@ export default function Modal({
 
   if (!open) return null;
 
-  return (
+  return createPortal(
     <div
       className="app-modal-backdrop"
       onMouseDown={(event) => {
@@ -64,6 +65,7 @@ export default function Modal({
       <div className="app-modal-card" role="dialog" aria-modal="true">
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

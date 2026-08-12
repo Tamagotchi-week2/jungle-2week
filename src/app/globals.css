@@ -263,6 +263,48 @@ button {
 .confirm-dialog-cancel:hover { background:rgba(51,65,85,.8); }
 .confirm-dialog-confirm { border:1px solid rgba(248,113,113,.55); background:rgba(248,113,113,.18); color:#fecaca; }
 .confirm-dialog-confirm:hover { background:rgba(248,113,113,.3); transform:translateY(-1px); }
+.app-modal-card:has(.confirm-dialog-forest) {
+  width:min(90vw,500px);
+  overflow:visible;
+  padding:1.6rem;
+  border:7px solid #422916;
+  border-radius:9px;
+  background-color:#456d37;
+  background-image:radial-gradient(circle at 10% 18%,rgba(181,214,99,.22) 0 3px,transparent 4px),linear-gradient(140deg,#527b3e,#315b32);
+  box-shadow:inset 0 0 0 3px #b97c3f,inset 0 0 0 7px #68401f,7px 8px 0 rgba(20,13,7,.62);
+  color:#fff1c8;
+  text-shadow:2px 2px 0 #2b4425;
+}
+.confirm-dialog-forest::before {
+  content:"";
+  width:72px;
+  height:9px;
+  margin:0 auto -.25rem;
+  background:repeating-linear-gradient(90deg,#96b856 0 12px,#6d963f 12px 22px);
+  box-shadow:0 3px 0 #2e4e29;
+}
+.confirm-dialog-kicker { margin:0; color:#d9ea92; font-size:.72rem; font-weight:900; letter-spacing:.2em; }
+.confirm-dialog-forest .confirm-dialog-message {
+  padding:.8rem 1rem;
+  color:#4a301a;
+  border:4px solid #4a2e19;
+  border-radius:5px;
+  background:linear-gradient(105deg,#d2ad70,#f1d9a3 18%,#d6b176);
+  box-shadow:inset 0 0 0 2px #f9e5b6,3px 4px 0 rgba(38,23,12,.5);
+  text-shadow:1px 1px 0 #fff0c6;
+}
+.confirm-dialog-forest .confirm-dialog-cancel,
+.confirm-dialog-forest .confirm-dialog-confirm {
+  border:3px solid #3f2817;
+  border-radius:5px;
+  color:#fff1c9;
+  box-shadow:inset 0 0 0 2px rgba(255,232,175,.24),0 3px 0 #302014;
+  text-shadow:1px 1px 0 #352014;
+}
+.confirm-dialog-forest .confirm-dialog-cancel { background:#64833b; }
+.confirm-dialog-forest .confirm-dialog-confirm { background:#9a5737; }
+.confirm-dialog-forest .confirm-dialog-cancel:hover { background:#789b48; transform:translateY(-1px); }
+.confirm-dialog-forest .confirm-dialog-confirm:hover { background:#b46643; }
 
 /* 최종 성장 단계 도달 연출 — 모달 안에서 재생된다 */
 .evolution-celebrate { display:grid; justify-items:center; gap:clamp(.5rem,1.5vw,.9rem); text-align:center; }
@@ -616,20 +658,6 @@ button {
   box-shadow: inset 0 -3px 0 #8cac53,0 5px 0 rgba(25,17,10,.48);
   text-shadow: 2px 2px 0 #294326;
 }
-.village-hud::before,
-.village-hud::after {
-  content:"";
-  position:absolute;
-  z-index:0;
-  top:0;
-  bottom:0;
-  width:72px;
-  pointer-events:none;
-  background:radial-gradient(ellipse at center,#8fb34d 0 28%,#4e813a 30% 50%,transparent 52%);
-  background-size:38px 30px;
-}
-.village-hud::before { left:0; }
-.village-hud::after { right:0; transform:scaleX(-1); }
 .village-hud > div { position:relative; z-index:1; }
 
 .village-resource-card,
