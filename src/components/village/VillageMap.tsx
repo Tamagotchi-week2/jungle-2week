@@ -17,6 +17,7 @@ import {
 } from "./constants";
 import { buildingSprite, playerSprite, type Direction } from "@/lib/sprites";
 import { judgeMine, type MineFailReason } from "@/lib/game/gather";
+import { randomId } from "@/lib/client/randomId";
 import { useMe } from "./MeContext";
 
 const DIRECTION_VECTORS = {
@@ -181,7 +182,7 @@ export default function VillageMap({ activeScene, onOpenScene }: VillageMapProps
   }
 
   function startMineLocally(): string {
-    const attemptId = crypto.randomUUID();
+    const attemptId = randomId();
     mineClickRef.current = 0;
     mineCompletingRef.current = false;
     mineStartedAtRef.current = performance.now();

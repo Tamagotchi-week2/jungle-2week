@@ -1,0 +1,67 @@
+name: Deploy to Oracle VM
+
+# main 에 푸시될 때마다 GitHub Actions 러너(넉넉한 CPU/RAM)에서 빌드하고,
+# 완성된 산출물만 VM으로 옮긴다. VM(1GB RAM)에서는 빌드를 하지 않는다 —
+# 예전에 next build 를 VM에서 직접 돌렸다가 스왑까지 밀려 5분 넘게 걸렸다.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm ci
+
+      # 스키마 변경사항을 Supabase에 직접 적용한다 (러너 -> Supabase, VM 안 거침)
+      - name: Apply DB migrations
+        run: npx prisma migrate deploy
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Build
+        run: npm run build
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      # devDependencies 는 VM에 안 실어도 되므로 여기서 미리 덜어낸다
+      - name: Strip devDependencies
+        run: npm prune --omit=dev
+
+      - name: Package build output
+        run: |
+          tar -czf deploy.tar.gz \
+            .next public node_modules package.json package-lock.json \
+            next.config.ts src/generated
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Upload build artifact
+        run: |
+          scp -i ~/.ssh/deploy_key deploy.tar.gz \
+            ubuntu@${{ secrets.DEPLOY_HOST }}:~/deploy.tar.gz
+
+      - name: Extract and restart service
+        run: |
+          ssh -i ~/.ssh/deploy_key ubuntu@${{ secrets.DEPLOY_HOST }} '
+            set -e
+            cd ~/tamajungle
+            tar -xzf ~/deploy.tar.gz
+            rm ~/deploy.tar.gz
+            sudo systemctl restart tamajungle
+            sleep 2
+            systemctl is-active tamajungle
+          '
