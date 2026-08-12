@@ -602,18 +602,35 @@ button {
 
 /* 빌리지 HUD와 상호작용 안내 — 첨부된 픽셀 나무판 질감. */
 .village-hud {
-  border-bottom: 0;
-  background-color: #e6b8ae;
-  background-image: linear-gradient(rgba(87, 53, 47, 0.08), rgba(87, 53, 47, 0.08)),
-    url("/sprites/house/wood-card-pink.png");
+  position:relative;
+  border-bottom: 5px solid #3b2817;
+  background-color: #47733a;
+  background-image:
+    radial-gradient(circle at 4% 18%,rgba(175,215,91,.32) 0 3px,transparent 4px),
+    radial-gradient(circle at 92% 72%,rgba(31,82,35,.34) 0 3px,transparent 4px),
+    repeating-linear-gradient(0deg,rgba(23,58,27,.12) 0 3px,transparent 3px 17px),
+    linear-gradient(100deg,#385f32,#5f873e 48%,#31572e);
   background-position: center;
-  background-size: calc(100% + 24px) auto;
-  background-repeat: no-repeat;
-  color: #fffdf8;
+  color: #fff1c9;
   image-rendering: pixelated;
-  box-shadow: inset 0 -2px 0 rgba(255, 239, 228, 0.28);
-  text-shadow: 2px 2px 0 #694b45, -1px -1px 0 #694b45;
+  box-shadow: inset 0 -3px 0 #8cac53,0 5px 0 rgba(25,17,10,.48);
+  text-shadow: 2px 2px 0 #294326;
 }
+.village-hud::before,
+.village-hud::after {
+  content:"";
+  position:absolute;
+  z-index:0;
+  top:0;
+  bottom:0;
+  width:72px;
+  pointer-events:none;
+  background:radial-gradient(ellipse at center,#8fb34d 0 28%,#4e813a 30% 50%,transparent 52%);
+  background-size:38px 30px;
+}
+.village-hud::before { left:0; }
+.village-hud::after { right:0; transform:scaleX(-1); }
+.village-hud > div { position:relative; z-index:1; }
 
 .village-resource-card,
 .village-hint-card {
@@ -635,25 +652,30 @@ button {
 }
 
 .village-resource-card {
-  border: 2px solid rgba(255, 239, 228, 0.72);
-  background: rgba(255, 239, 228, 0.18);
-  color: #fffdf8;
-  box-shadow: inset 0 0 0 1px rgba(168, 113, 102, 0.24), 2px 3px 0 rgba(151, 98, 88, 0.3);
-  text-shadow: 2px 2px 0 #694b45, -1px -1px 0 #694b45;
+  border: 4px solid #4b2e17;
+  border-radius:7px;
+  background-color:#d9b273;
+  background-image:linear-gradient(rgba(75,43,20,.08),rgba(75,43,20,.08)),url("/sprites/house/wood-card-brown.png");
+  background-position:center;
+  background-size:cover;
+  color: #fff4d2;
+  box-shadow: inset 0 0 0 2px #e9bd7a,3px 4px 0 rgba(35,22,11,.5);
+  text-shadow: 2px 2px 0 #4c2a15;
 }
 
 .village-hud .village-hud-button {
-  border: 2px solid rgba(255, 239, 228, 0.75);
-  background: rgba(239, 199, 189, 0.62);
-  color: #fffdf8;
-  box-shadow: inset 0 0 0 1px rgba(168, 113, 102, 0.28), 2px 3px 0 rgba(151, 98, 88, 0.3);
-  text-shadow: 2px 2px 0 #694b45;
+  border: 3px solid #3f2917;
+  border-radius:6px;
+  background: linear-gradient(#719546,#496d32);
+  color: #fff2c9;
+  box-shadow: inset 0 0 0 2px #9cba5d,3px 3px 0 rgba(38,25,13,.55);
+  text-shadow: 2px 2px 0 #304621;
 }
 
 .village-hud .village-hud-button:hover {
-  border-color: #fff0dd;
-  background: rgba(255, 222, 210, 0.78);
-  color: #fff;
+  border-color: #f0cd72;
+  background: linear-gradient(#8bac51,#5c8138);
+  color: #fff8de;
   transform: translateY(-1px);
 }
 
