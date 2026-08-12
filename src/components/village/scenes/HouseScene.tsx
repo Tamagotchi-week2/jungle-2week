@@ -115,6 +115,11 @@ export default function HouseScene() {
   // 최종 성장 단계에 막 도달했을 때만 짧게 연출한다.
   const [celebrating, setCelebrating] = useState(false);
   const [evolving, setEvolving] = useState(false);
+  /** 마지막 급여 뒤 서버 진화 전에 진행 바를 먼저 완충해서 보여주기 위한 화면 값 */
+  const [feedProgressPreview, setFeedProgressPreview] = useState<{
+    petId: string;
+    count: number;
+  } | null>(null);
   const [hatchedPet, setHatchedPet] = useState<HatchResponse["pet"] | null>(null);
   const [grownPet, setGrownPet] = useState<EvolveResponse["pet"] | null>(null);
 
@@ -205,7 +210,11 @@ export default function HouseScene() {
       resourceType,
     });
     if (result) {
+      setFeedProgressPreview({ petId: result.pet.id, count: result.pet.feedCount });
       if (result.canEvolve) {
+        // 마지막 칸이 화면에 그려지고 CSS 전환이 끝난 다음 진화 연출을 시작한다.
+        setEvolving(true);
+        await new Promise<void>((resolve) => window.setTimeout(resolve, 550));
         await evolve(result.pet.id);
       } else {
         await refresh();
@@ -214,7 +223,7 @@ export default function HouseScene() {
   }
 
   function canFeed(type: ResourceType) {
-    return !busy && !canEvolve && resources[type] > 0;
+    return !busy && !evolving && !canEvolve && resources[type] > 0;
   }
 
   /** 선택만 하는 단계 — 로컬 state 에 저장하고 하이라이트만 한다. 서버 전송은 claimSelectedReward() 몫 */
@@ -391,6 +400,11 @@ export default function HouseScene() {
     pet.feedRequired !== null &&
     pet.feedCount >= pet.feedRequired;
 
+  const visibleFeedCount =
+    pet && feedProgressPreview?.petId === pet.id
+      ? feedProgressPreview.count
+      : pet?.feedCount ?? 0;
+
   // 이전 버전에서 이미 조건을 채운 채 남은 개체도 버튼 없이 자동 진화시킨다.
   useEffect(() => {
     if (!canEvolve || !pet || autoEvolvingPetRef.current === pet.id) return;
@@ -460,13 +474,13 @@ export default function HouseScene() {
                     <p className="house-stage-card-count mt-2 text-sm">
                       {pet.feedRequired === null
                         ? pet.speciesName ?? "완성"
-                        : `${pet.feedCount} / ${pet.feedRequired}회`}
+                        : `${visibleFeedCount} / ${pet.feedRequired}회`}
                     </p>
                     {pet.feedRequired !== null ? (
                       <div className="house-stage-progress" aria-hidden="true">
                         <span
                           style={{
-                            width: `${Math.min(100, (pet.feedCount / pet.feedRequired) * 100)}%`,
+                            width: `${Math.min(100, (visibleFeedCount / pet.feedRequired) * 100)}%`,
                           }}
                         />
                       </div>
