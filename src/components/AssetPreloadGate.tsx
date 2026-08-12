@@ -16,12 +16,13 @@ const SESSION_KEY = 'tamajungle:assetsPreloaded';
 const CONCURRENCY = 4;
 
 export function AssetPreloadGate({ children }: { children: React.ReactNode }) {
-  const [done, setDone] = useState(false);
+  const [done, setDone] = useState(
+    () => typeof window !== 'undefined' && sessionStorage.getItem(SESSION_KEY) === '1',
+  );
   const [progress, setProgress] = useState({ loaded: 0, total: SPRITE_ASSETS.length });
 
   useEffect(() => {
     if (sessionStorage.getItem(SESSION_KEY) === '1') {
-      setDone(true);
       return;
     }
 

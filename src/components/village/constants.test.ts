@@ -6,8 +6,6 @@ import {
   isPixelBlocked,
   isPixelCircleBlocked,
   isPixelWithinInteractionZone,
-  MAP_IMAGE_HEIGHT,
-  MAP_IMAGE_WIDTH,
 } from "./constants";
 
 describe("village collision and interaction zones", () => {
