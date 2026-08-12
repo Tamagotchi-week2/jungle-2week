@@ -86,12 +86,13 @@ export default function TradeSceneContainer({ onClose }: { onClose?: () => void 
     ];
     setPets(ordered);
 
-    // 기본 선택은 고를 수 있는 것 중에서 잡는다
-    const selectable = ordered.filter((p) => !p.isLocked);
+    // 보고 있던 개체는 그대로 둔다. 방금 교환에 건 개체는 잠기지만, 화면은
+    // 아직 그 개체의 코드를 띄우고 있으므로 테두리도 거기 남아야 한다.
+    // 목록에서 아예 사라졌을 때만(교환 완료 등) 다른 것으로 옮긴다.
     setSelectedId((current) =>
-      current && selectable.some((p) => p.id === current)
+      current && ordered.some((p) => p.id === current)
         ? current
-        : (selectable[0]?.id ?? null),
+        : (ordered.find((p) => !p.isLocked)?.id ?? null),
     );
     setLoadingPets(false);
   }, []);
@@ -189,8 +190,8 @@ export default function TradeSceneContainer({ onClose }: { onClose?: () => void 
   }
 
   async function handleCreate() {
-    if (!selectedId) return;
-    const created = await run(() => createTrade({ petId: selectedId }));
+    if (!offerPet) return;
+    const created = await run(() => createTrade({ petId: offerPet.id }));
     if (!created) return;
 
     setStatus({
@@ -205,13 +206,16 @@ export default function TradeSceneContainer({ onClose }: { onClose?: () => void 
     setPhase("waiting");
     setNotice(null);
     startPolling(created.code, "waiting");
+    // 목록을 다시 읽어 방금 건 개체가 곧바로 "교환 중" 으로 보이게 한다.
+    // 그러지 않으면 화면을 닫았다 열기 전까지 멀쩡해 보인다.
+    await loadPets();
   }
 
   async function handleJoin() {
-    if (!selectedId || code.trim().length === 0) return;
+    if (!offerPet || code.trim().length === 0) return;
     const entered = code.trim().toUpperCase();
     const joined = await run(() =>
-      joinTrade({ code: entered, petId: selectedId }),
+      joinTrade({ code: entered, petId: offerPet.id }),
     );
     if (!joined) return;
 
@@ -227,6 +231,7 @@ export default function TradeSceneContainer({ onClose }: { onClose?: () => void 
     setPhase("sent");
     setNotice("제안자의 확정을 기다립니다.");
     startPolling(entered, "sent");
+    await loadPets();
   }
 
   async function handleResolve(accept: boolean) {
@@ -295,7 +300,15 @@ export default function TradeSceneContainer({ onClose }: { onClose?: () => void 
           "idle";
 
   const selected = pets.find((p) => p.id === selectedId) ?? null;
-  const canAct = !busy && phase === "idle" && selected !== null;
+
+  /**
+   * 내놓을 수 있는 개체인가. 잠긴 개체는 눌러서 코드를 볼 수는 있지만
+   * 그 상태로 새 교환에 걸 수는 없다.
+   */
+  const offerPet = selected && !selected.isLocked ? selected : null;
+  // 잠긴 개체를 보고 있는 동안에는 발급·참여를 막는다. 그 개체는 이미 다른
+  // 교환에 걸려 있어 서버가 거절한다.
+  const canAct = !busy && phase === "idle" && offerPet !== null;
 
   if (loadingPets) {
     return <p className="p-6 text-center text-sm text-slate-400">불러오는 중…</p>;
@@ -344,18 +357,22 @@ export default function TradeSceneContainer({ onClose }: { onClose?: () => void 
                 <button
                   key={pet.id}
                   type="button"
-                  // 잠긴 개체도 누를 수 있다. 다만 고르는 것이 아니라 그 개체에
-                  // 걸린 교환을 다시 띄운다 — 코드를 잃어버려도 되찾을 수 있어야 한다.
-                  disabled={phase !== "idle"}
-                  onClick={() =>
-                    pet.isLocked ? showLockedTrade(pet.id) : setSelectedId(pet.id)
-                  }
+                  // 교환이 진행 중이어도 다른 개체를 눌러볼 수 있다. 잠긴 개체는
+                  // 그 개체에 걸린 교환을 띄우고, 그렇지 않으면 다음에 내놓을
+                  // 개체로 고른다. 진행 중이라고 목록 전체를 잠그면 코드를
+                  // 확인하러 들어온 유저가 아무것도 누를 수 없다.
+                  onClick={() => {
+                    // 테두리는 언제나 방금 누른 개체를 따라간다. 교환이 진행
+                    // 중이라고 커서를 고정해 두면 눌러도 아무 반응이 없어 보인다.
+                    setSelectedId(pet.id);
+                    if (pet.isLocked) void showLockedTrade(pet.id);
+                  }}
                   title={
                     pet.isLocked
                       ? "이 개체에 걸린 교환을 다시 엽니다."
                       : undefined
                   }
-                  className={`trade-pet-choice px-3 py-2 text-sm transition disabled:opacity-50 ${
+                  className={`trade-pet-choice px-3 py-2 text-sm transition ${
                     pet.isLocked ? "trade-pet-choice-locked" : ""
                   } ${
                     pet.id === selectedId
@@ -365,7 +382,7 @@ export default function TradeSceneContainer({ onClose }: { onClose?: () => void 
                 >
                   {label(pet)}
                   {pet.isLocked ? (
-                    <span className="trade-pet-choice-lock-tag">교환 중 · 코드 보기</span>
+                    <span className="trade-pet-choice-lock-tag">교환 중</span>
                   ) : null}
                 </button>
               ))}

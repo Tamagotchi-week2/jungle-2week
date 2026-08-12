@@ -484,26 +484,6 @@ suite('서비스 계층 통합', () => {
       expect(cell?.hasNormal).toBe(true);
     });
 
-    it('예전에 쌓인 알비노 전용 기록도 일반 칸이 열린 것으로 읽는다', async () => {
-      const userId = await newUser();
-      const adult = await raiseToAdult(userId, 'air');
-
-      // registerSpecies 가 두 칸을 함께 켜기 전에 쌓였을 법한 상태를 만든다
-      const pet = await db.pet.findUniqueOrThrow({ where: { id: adult.id } });
-      await db.dexEntry.update({
-        where: {
-          userId_speciesId: { userId, speciesId: pet.speciesId! },
-        },
-        data: { hasNormal: false, hasAlbino: true },
-      });
-
-      const cell = (await getDex(userId)).cells.find((c) => c.name === '오목눈이');
-      // 저장된 값은 꺼져 있어도 읽을 때 켜져야 한다. 안 그러면 알비노를 가진
-      // 칸에 "미발견" 이 남는다.
-      expect(cell?.hasAlbino).toBe(true);
-      expect(cell?.hasNormal).toBe(true);
-    });
-
     it('교환으로 개체를 넘겨도 도감 칸은 닫히지 않는다', async () => {
       const a = await newUser();
       const b = await newUser();

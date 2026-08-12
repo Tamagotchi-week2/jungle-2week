@@ -75,19 +75,12 @@ export async function getDex(userId: string): Promise<DexResponse> {
   const cells: DexCell[] = SPECIES_LIST.map((s) => {
     const id = speciesId.get(`${s.eggType}:${s.combo}`);
     const entry = id === undefined ? undefined : owned.get(id);
-    const hasAlbino = entry?.hasAlbino ?? false;
     return {
       eggType: s.eggType as EggType,
       combo: s.combo as Combo,
       name: s.name,
-      // 알비노가 있으면 일반도 있는 것으로 본다.
-      //
-      // 등록할 때도 두 칸을 함께 켜지만(registerSpecies), 그 규칙이 생기기 전에
-      // 쌓인 기록에는 hasNormal 이 꺼져 있다. 그런 칸은 알비노를 갖고 있는데도
-      // 상세 화면에 "미발견" 이 남는다. 마이그레이션으로 데이터를 고치는 대신
-      // 읽는 쪽에서 규칙을 적용해, 언제 쌓인 기록이든 같은 결론이 나오게 한다.
-      hasNormal: (entry?.hasNormal ?? false) || hasAlbino,
-      hasAlbino,
+      hasNormal: entry?.hasNormal ?? false,
+      hasAlbino: entry?.hasAlbino ?? false,
     };
   });
 
