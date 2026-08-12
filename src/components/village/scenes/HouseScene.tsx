@@ -118,6 +118,7 @@ export default function HouseScene() {
   /** 마지막 급여 뒤 서버 진화 전에 진행 바를 먼저 완충해서 보여주기 위한 화면 값 */
   const [feedProgressPreview, setFeedProgressPreview] = useState<{
     petId: string;
+    stage: number;
     count: number;
   } | null>(null);
   const [hatchedPet, setHatchedPet] = useState<HatchResponse["pet"] | null>(null);
@@ -210,7 +211,11 @@ export default function HouseScene() {
       resourceType,
     });
     if (result) {
-      setFeedProgressPreview({ petId: result.pet.id, count: result.pet.feedCount });
+      setFeedProgressPreview({
+        petId: result.pet.id,
+        stage: result.pet.stage,
+        count: result.pet.feedCount,
+      });
       if (result.canEvolve) {
         // 마지막 칸이 화면에 그려지고 CSS 전환이 끝난 다음 진화 연출을 시작한다.
         setEvolving(true);
@@ -401,7 +406,9 @@ export default function HouseScene() {
     pet.feedCount >= pet.feedRequired;
 
   const visibleFeedCount =
-    pet && feedProgressPreview?.petId === pet.id
+    pet &&
+    feedProgressPreview?.petId === pet.id &&
+    feedProgressPreview.stage === pet.stage
       ? feedProgressPreview.count
       : pet?.feedCount ?? 0;
 
