@@ -209,12 +209,11 @@ export async function evolvePet(
       if (applied.count === 0) {
         throw new GameRuleError('이미 처리된 진화 요청이다');
       }
-      const updated = await tx.pet.findUniqueOrThrow({
-        where: { id: petId },
-        include: { species: true },
-      });
+      // UPDATE 직후 같은 행을 다시 읽지 않는다. 방금 쓴 값을 이미 메모리에
+      // 갖고 있으므로(pet + common + 이번에 바뀐 필드), 재조회 왕복 하나를
+      // 그대로 아낄 수 있다. 원격 DB 라 왕복 하나가 150ms 안팎이다.
       return {
-        pet: toPetView(updated),
+        pet: toPetView({ ...pet, ...common, stage: next.stage, stage2Trait: next.stage2Trait }),
         dexUpdated: false,
         rewardAvailable: false,
         isNewSpecies: false,
@@ -238,10 +237,9 @@ export async function evolvePet(
     if (applied.count === 0) {
       throw new GameRuleError('이미 처리된 진화 요청이다');
     }
-    const updated = await tx.pet.findUniqueOrThrow({
-      where: { id: petId },
-      include: { species: true },
-    });
+    // 여기도 재조회하지 않는다. species 는 이미 방금 조회해 갖고 있으므로
+    // pet + common + 바뀐 필드를 합치면 갱신된 행과 같은 모양이 나온다.
+    const updated = { ...pet, ...common, stage: next.stage, speciesId: species.id, species };
 
     const { isNewNormal, isNewAlbino } = await registerSpecies(tx, userId, species.id, pet.isAlbino);
 
