@@ -94,11 +94,6 @@ export default function DexScene() {
                       {!acquired ? <div className="dex-book-slot-mask">???</div> : null}
                     </div>
                     <span className="dex-book-slot-name">{cell.name}</span>
-                    {cell.hasAlbino ? (
-                      <span className="dex-book-albino-mark" title="Albino acquired">
-                        ✦
-                      </span>
-                    ) : null}
                   </button>
                 );
               })}
